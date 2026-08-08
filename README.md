@@ -104,4 +104,6 @@ Remove o `dxvk.conf` e todas as DLLs presentes na pasta `bin64` do programa que 
 
 ## 📜 Licença
 
-Defina aqui a licença de distribuição do projeto (ex.: MIT, GPL-3.0, uso privado, etc.).
+Este projeto está licenciado sob a [Licença MIT](LICENSE).
+
+Você é livre para usar, copiar, modificar e distribuir este software, desde que mantenha o aviso de copyright original.
