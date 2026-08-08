@@ -94,6 +94,47 @@ Remove o `dxvk.conf` e todas as DLLs presentes na pasta `bin64` do programa que 
 
 ---
 
+## 📦 Gerando o executável (.exe)
+
+O `BDO_Mode_Manager.pyw` pode ser compilado em um executável autônomo (`.exe`) usando o **PyInstaller**, através do script `build.bat` incluído no repositório.
+
+### Dependências para compilar
+
+| Dependência | Observação |
+|---|---|
+| **Python 3.12** | Recomendado especificamente. Versões instaladas pelo novo *Python Install Manager* (ex.: Python 3.13/3.14 instalados via `py install`) usam uma estrutura de pastas (`AppData\Local\Python\pythoncore-X.Y-64`) que o PyInstaller ainda não localiza corretamente, causando falha ao empacotar os dados do Tcl/Tk (`FileNotFoundError: Tcl data directory ... not found`). Use o [instalador clássico do Python 3.12](https://www.python.org/downloads/release/python-3120/) para evitar esse problema. |
+| **PyInstaller** | Instalado automaticamente pelo `build.bat`, caso ainda não esteja presente (`pip install pyinstaller`). |
+| **`bin64/`** e **`Modos de jogo/`** | Precisam existir na raiz do projeto antes de rodar o build — são copiadas automaticamente para dentro da pasta de saída. |
+
+### Como compilar
+
+1. Certifique-se de que o Python 3.12 está instalado (`py list` deve listar `3.12`).
+2. Rode o `build.bat` na raiz do projeto:
+   ```powershell
+   .\build.bat
+   ```
+3. O script executa, em sequência: limpeza de builds anteriores → compilação com PyInstaller (`--onedir --windowed`) → cópia das pastas `bin64` e `Modos de jogo` para dentro da pasta de saída.
+4. O resultado final fica em `dist\BDO Mode Manager\` — essa pasta inteira (com o `.exe`, a subpasta `_internal`, `bin64` e `Modos de jogo`) é o que deve ser distribuído/zipado.
+
+> ⚠️ **Importante ao criar o `build.bat`**: se você **baixar** o arquivo `.bat` diretamente de um navegador, chat, ou link (mesmo deste repositório), o Windows marca o arquivo com o atributo *Mark of the Web* (MOTW) — a flag de "veio da internet". Isso é o mesmo motivo que faz o `.exe` compilado ser bloqueado pelo **Controle de Aplicativo Inteligente** ao ser distribuído (veja a seção seguinte).
+>
+> Se o `.bat` baixado for bloqueado ou gerar avisos ao rodar, a forma mais confiável de contornar é: **criar um novo arquivo `.bat` manualmente** (botão direito → Novo → Documento de Texto → renomear a extensão para `.bat`) e **colar o conteúdo do script dentro dele**, em vez de executar o arquivo baixado diretamente. Um arquivo criado localmente dessa forma não recebe a marcação MOTW, então roda sem passar pelas verificações extras de segurança do Windows.
+
+---
+
+## 🔒 Sobre o bloqueio de segurança do Windows no .exe distribuído
+
+Ao distribuir o `.exe` gerado (via zip, Discord, Google Drive, etc.), quem for baixar pode ver o aviso **"O Controle de aplicativo inteligente bloqueou um arquivo que pode não ser seguro"**. Isso acontece porque o executável não possui uma **assinatura digital de código** reconhecida pela Microsoft — é o comportamento padrão do Windows para qualquer executável de terceiros baixado da internet, independentemente de o programa ser seguro ou não.
+
+Para o usuário final destravar a execução, uma das opções abaixo resolve:
+
+- **Desbloquear o arquivo**: botão direito no `.exe` → Propriedades → aba Geral → marcar "Desbloquear" → Aplicar.
+- **Desligar o Controle de Aplicativo Inteligente** (se ainda estiver em modo "Avaliação"): Configurações → Privacidade e segurança → Segurança do Windows → Controle de aplicativos e navegador → Controle de aplicativo inteligente → Desligado.
+
+Para eliminar esse aviso definitivamente para todos os usuários, seria necessário assinar o executável com um certificado de assinatura de código (pago) ou distribuir via Microsoft Store.
+
+---
+
 ## ⚠️ Avisos
 
 - O programa altera arquivos dentro da pasta de instalação do jogo (`bin64`). Use por sua conta e risco.
