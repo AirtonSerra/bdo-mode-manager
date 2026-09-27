@@ -1,4 +1,6 @@
 import os
+import sys
+import json
 import shutil
 import hashlib
 import tkinter as tk
@@ -12,10 +14,16 @@ import winreg
 
 NOME_ARQUIVO = "dxvk.conf"
 
-# Pasta onde o próprio programa está localizado
-PASTA_PROGRAMA = os.path.dirname(
-    os.path.abspath(__file__)
-)
+# Pasta onde o próprio programa está localizado.
+# Quando rodando como .pyw, usa o caminho do script.
+# Quando compilado com PyInstaller (--onefile), usa a pasta
+# onde o .exe está, e não a pasta temporária de extração.
+if getattr(sys, "frozen", False):
+    PASTA_PROGRAMA = os.path.dirname(sys.executable)
+else:
+    PASTA_PROGRAMA = os.path.dirname(
+        os.path.abspath(__file__)
+    )
 
 # Pasta dos modos de jogo
 PASTA_MODOS = os.path.join(
@@ -29,14 +37,45 @@ PASTA_BIN64_PROGRAMA = os.path.join(
     "bin64"
 )
 
-# Ícone do Black Desert
-ICONE_BDO = os.path.join(
-    PASTA_PROGRAMA,
-    "BlackDesert.ico"
-)
-
 # Caminho do BDO
 PASTA_BDO = ""
+
+# Arquivo de configuração onde o path do BDO é salvo, para não
+# precisar procurar/selecionar de novo a cada abertura.
+# Fica na própria pasta do programa (ao lado do .pyw/.exe) —
+# não cria nada em %APPDATA% nem em outro lugar do PC do usuário.
+ARQUIVO_CONFIG = os.path.join(PASTA_PROGRAMA, "config.json")
+
+
+# ============================================================
+# CONFIGURAÇÃO SALVA (PATH DO BDO)
+# ============================================================
+
+def carregar_pasta_bdo_salva():
+    """
+    Lê o path do BDO salvo anteriormente no arquivo de config.
+    Retorna string vazia se não existir ou estiver corrompido.
+    """
+    try:
+        with open(ARQUIVO_CONFIG, "r", encoding="utf-8") as arquivo:
+            dados = json.load(arquivo)
+        return dados.get("pasta_bdo", "") or ""
+    except (OSError, IOError, ValueError, AttributeError):
+        return ""
+
+
+def salvar_pasta_bdo(pasta):
+    """
+    Salva o path do BDO no arquivo de config (na pasta do
+    programa), para ser reaproveitado na próxima abertura.
+    """
+    try:
+        with open(ARQUIVO_CONFIG, "w", encoding="utf-8") as arquivo:
+            json.dump({"pasta_bdo": pasta}, arquivo, ensure_ascii=False, indent=2)
+    except (OSError, IOError):
+        # Falha ao salvar (ex.: pasta somente leitura) não deve
+        # impedir o uso do programa.
+        pass
 
 
 # ============================================================
@@ -157,10 +196,13 @@ def procurar_bdo():
     nomes = [
         "Black Desert",
         "BlackDesert",
+        "Black Desert Online",
         os.path.join("Pearl Abyss", "Black Desert"),
         os.path.join("Pearl Abyss", "BlackDesert"),
         os.path.join("Steam", "steamapps", "common", "Black Desert"),
-        os.path.join("Steam", "steamapps", "common", "BlackDesert")
+        os.path.join("Steam", "steamapps", "common", "BlackDesert"),
+        # Nome real da pasta na versão Steam do BDO
+        os.path.join("Steam", "steamapps", "common", "Black Desert Online")
     ]
 
     for base in pastas_base:
@@ -177,14 +219,26 @@ def procurar_bdo():
         candidatos.extend([
             os.path.join(raiz, "BlackDesert"),
             os.path.join(raiz, "Black Desert"),
+            os.path.join(raiz, "Black Desert Online"),
             os.path.join(raiz, "Jogos", "BlackDesert"),
             os.path.join(raiz, "Jogos", "Black Desert"),
+            os.path.join(raiz, "Jogos", "Black Desert Online"),
             os.path.join(raiz, "Games", "BlackDesert"),
             os.path.join(raiz, "Games", "Black Desert"),
+            os.path.join(raiz, "Games", "Black Desert Online"),
             os.path.join(raiz, "Program Files", "BlackDesert"),
             os.path.join(raiz, "Program Files", "Black Desert"),
+            os.path.join(raiz, "Program Files", "Black Desert Online"),
             os.path.join(raiz, "Program Files (x86)", "BlackDesert"),
-            os.path.join(raiz, "Program Files (x86)", "Black Desert")
+            os.path.join(raiz, "Program Files (x86)", "Black Desert"),
+            os.path.join(raiz, "Program Files (x86)", "Black Desert Online"),
+            # Bibliotecas Steam em outras unidades (padrão mais comum na versão Steam)
+            os.path.join(raiz, "Steam", "steamapps", "common", "Black Desert"),
+            os.path.join(raiz, "Steam", "steamapps", "common", "BlackDesert"),
+            os.path.join(raiz, "Steam", "steamapps", "common", "Black Desert Online"),
+            os.path.join(raiz, "SteamLibrary", "steamapps", "common", "Black Desert"),
+            os.path.join(raiz, "SteamLibrary", "steamapps", "common", "BlackDesert"),
+            os.path.join(raiz, "SteamLibrary", "steamapps", "common", "Black Desert Online")
         ])
 
     vistos = set()
@@ -201,7 +255,7 @@ def procurar_bdo():
         if bdo_valido(candidato):
             return candidato
 
-    nomes_alvo = {"blackdesert", "black desert"}
+    nomes_alvo = {"blackdesert", "black desert", "black desert online"}
     ignorar = {
         "$recycle.bin",
         "system volume information",
@@ -270,6 +324,7 @@ def selecionar_bdo():
         return
 
     PASTA_BDO = pasta
+    salvar_pasta_bdo(PASTA_BDO)
     atualizar_status()
     atualizar_modo_instalado()
 
@@ -1007,7 +1062,21 @@ botao_desinstalar.pack(pady=(5, 20))
 # INICIA PROGRAMA
 # ============================================================
 
-PASTA_BDO = procurar_bdo()
+# 1) Tenta usar o path salvo de uma vez anterior (manual ou automático).
+PASTA_BDO = carregar_pasta_bdo_salva()
+
+# 2) Por via das dúvidas, roda a validação de novo: o jogo pode ter
+#    sido movido, reinstalado ou desinstalado desde a última vez.
+if not bdo_valido(PASTA_BDO):
+    # 3) Só cai na busca automática pelo sistema se o path salvo
+    #    não existir mais ou não for mais válido.
+    PASTA_BDO = procurar_bdo()
+
+# 4) Sempre que houver um path válido (salvo ou recém-encontrado),
+#    garante que ele fique salvo para a próxima abertura.
+if PASTA_BDO and bdo_valido(PASTA_BDO):
+    salvar_pasta_bdo(PASTA_BDO)
+
 atualizar_status()
 criar_botoes_modos()
 atualizar_modo_instalado()
