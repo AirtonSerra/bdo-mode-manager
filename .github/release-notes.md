@@ -2,7 +2,7 @@ Versão para Windows com os arquivos necessários para usar o BDO Mode Manager.
 
 ### Download e uso
 
-1. Baixe o arquivo **BDO-Mode-Manager-v1.0.1-Windows.zip** em Assets.
+1. Baixe o arquivo **BDO-Mode-Manager-v1.0.2-Windows.zip** em Assets.
 2. Extraia o ZIP inteiro para uma pasta; não abra o aplicativo dentro do ZIP.
 3. Instale Python 3 com Tkinter e o launcher do Python.
 4. Abra o atalho **BDO Mode Manager** na pasta extraída.

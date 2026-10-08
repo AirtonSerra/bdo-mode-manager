@@ -46,6 +46,11 @@ If Not fso.FileExists(fso.BuildPath(appFolder, "BDO_Mode_Manager.pyw")) Then
 End If
 
 On Error Resume Next
+If fso.FileExists(fso.BuildPath(appFolder, "setup_shortcuts.vbs")) Then
+    shell.Run Quote(shell.ExpandEnvironmentStrings("%SystemRoot%\System32\wscript.exe")) & _
+        " " & Quote(fso.BuildPath(appFolder, "setup_shortcuts.vbs")) & " --icon-only", 0, True
+End If
+Err.Clear
 shell.Run command, 1, False
 If Err.Number <> 0 Then
     MsgBox "Nao foi possivel iniciar o aplicativo. Instale Python 3 com Tkinter e o launcher do Python e tente novamente.", 48, "BDO Mode Manager"
