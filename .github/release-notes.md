@@ -1,9 +1,14 @@
 Versão para Windows com os arquivos necessários para usar o BDO Mode Manager.
 
+> [!IMPORTANT]
+> **Desbloqueie o ZIP antes de extrair no Windows.** Clique com o botão direito no arquivo baixado → **Propriedades** → marque **Desbloquear**, se disponível → **Aplicar**. Só então extraia o pacote e execute o configurador.
+>
+> Se aparecer o aviso **“O Controle de Aplicativo Inteligente bloqueou um arquivo”**, e você já tiver extraído o ZIP, desbloqueie o ZIP original e extraia novamente para uma nova pasta. Esse procedimento resolveu o bloqueio observado nesta versão, sem desativar a proteção do Windows. Use apenas o pacote deste repositório; se o aviso continuar, não há garantia de liberação por esse procedimento.
+
 ### Download e uso
 
-1. Baixe o arquivo **BDO-Mode-Manager-v1.0.3-Windows.zip** em Assets.
-2. Extraia o ZIP inteiro para uma pasta; não abra o aplicativo dentro do ZIP.
+1. Baixe o arquivo **BDO-Mode-Manager-v1.0.0-Windows.zip** em Assets.
+2. Siga o aviso acima para desbloquear o ZIP e extraia todo o conteúdo para uma pasta; não abra o aplicativo dentro do ZIP.
 3. Instale Python 3 com Tkinter e o launcher do Python.
 4. No primeiro uso, execute **setup_shortcuts.vbs** para configurar o ícone e criar o atalho na área de trabalho. Depois abra **BDO Mode Manager** na pasta extraída ou na área de trabalho. Se mover a pasta, execute o configurador novamente.
 5. Selecione a instalação do jogo e clique em **Aplicar** no perfil desejado.

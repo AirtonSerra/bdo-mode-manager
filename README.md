@@ -72,7 +72,12 @@ bdo-mode-manager/
 
 ## ▶️ Como usar
 
-1. Baixe o ZIP para Windows na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases) e extraia todo o conteúdo para uma pasta.
+> [!IMPORTANT]
+> **Antes de extrair o ZIP no Windows:** clique com o botão direito no ZIP baixado → **Propriedades** → marque **Desbloquear**, se essa opção aparecer → **Aplicar**. Depois extraia todo o conteúdo. Isso pode resolver o aviso do Controle de Aplicativo Inteligente sobre arquivos vindos da Internet, como confirmado no uso desta versão.
+>
+> Se já extraiu o pacote antes de desbloquear, desbloqueie o ZIP e extraia novamente para uma nova pasta. Faça isso apenas para o pacote obtido deste repositório; não é necessário desativar a proteção do Windows. Se o bloqueio continuar, esse procedimento não garante a liberação de arquivos considerados não confiáveis pelo sistema.
+
+1. Baixe o ZIP para Windows na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases), siga o aviso acima e extraia todo o conteúdo para uma pasta.
 2. Feche o Black Desert Online antes de aplicar ou remover um perfil.
 3. No primeiro uso, execute **setup_shortcuts.vbs** para configurar o ícone e criar o atalho na área de trabalho. Depois abra **BDO Mode Manager** na pasta extraída ou na área de trabalho. Mantenha os arquivos da pasta juntos; se mover a pasta, execute o configurador novamente.
 
