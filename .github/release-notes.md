@@ -1,3 +1,11 @@
+### Correções da v1.0.1
+
+- Corrige o ícone e a abertura do aplicativo ao fixar a janela na barra de tarefas do Windows.
+- Define o inicializador correto para o item fixado, mantendo a instância única.
+
+> [!TIP]
+> **Atualizando de uma versão anterior:** desafixe o item antigo, feche o app, abra esta versão e fixe novamente o ícone da janela. O Windows não atualiza automaticamente os itens já fixados. Se mover a pasta, refaça a fixação.
+
 Versão para Windows com os arquivos necessários para usar o BDO Mode Manager.
 
 > [!IMPORTANT]
@@ -7,7 +15,7 @@ Versão para Windows com os arquivos necessários para usar o BDO Mode Manager.
 
 ### Download e uso
 
-1. Baixe o arquivo **BDO-Mode-Manager-v1.0.0-Windows.zip** em Assets.
+1. Baixe o arquivo **BDO-Mode-Manager-v1.0.1-Windows.zip** em Assets.
 2. Siga o aviso acima para desbloquear o ZIP e extraia todo o conteúdo para uma pasta; não abra o aplicativo dentro do ZIP.
 3. Instale Python 3 com Tkinter e o launcher do Python.
 4. No primeiro uso, execute **setup_shortcuts.vbs** para configurar o ícone e criar o atalho na área de trabalho. Depois abra **BDO Mode Manager** na pasta extraída ou na área de trabalho. Se mover a pasta, execute o configurador novamente.
