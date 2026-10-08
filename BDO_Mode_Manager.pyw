@@ -1,4 +1,6 @@
 import os
+import ctypes
+from ctypes import wintypes
 import json
 import shutil
 import hashlib
@@ -409,11 +411,12 @@ def atualizar_modo_instalado():
     modo = identificar_modo_instalado()
 
     if modo:
-        modo_var.set(f"Modo de jogo aplicado: {modo}")
+        modo_var.set(f"Perfil identificado: {modo}")
         modo_label.config(fg=COR_SUCESSO)
     else:
-        modo_var.set("Modo de jogo aplicado: Nenhum")
+        modo_var.set("Perfil identificado: Nenhum")
         modo_label.config(fg=COR_TEXTO_SECUNDARIO)
+    criar_botoes_modos()
 
 
 # ============================================================
@@ -672,57 +675,160 @@ def criar_botoes_modos():
         widget.destroy()
 
     modos = listar_modos()
-
+    atual = identificar_modo_instalado()
     if not modos:
-        aviso = tk.Label(
-            frame_modos,
-            text=(
-                "Nenhum modo de jogo encontrado.\n\n"
-                "Verifique a pasta:\n"
-                f"{PASTA_MODOS}"
-            ),
-            font=("Arial", 11),
-            justify="center",
-            bg=COR_FUNDO,
-            fg=COR_TEXTO_SECUNDARIO
-        )
-        aviso.pack(pady=20)
+        tk.Label(frame_modos, text="Nenhum perfil encontrado em Modos de jogo/.",
+                 bg=COR_FUNDO, fg=COR_TEXTO_SECUNDARIO).pack(pady=12)
         return
 
-    for nome_modo in modos:
-        botao = tk.Button(
-            frame_modos,
-            text=nome_modo,
-            font=("Arial", 13),
-            width=25,
-            height=2,
-            bg=COR_BOTAO,
-            fg=COR_BOTAO_TEXTO,
-            activebackground=COR_BOTAO_ATIVO,
-            activeforeground=COR_BOTAO_TEXTO,
-            relief="flat",
-            bd=0,
-            cursor="hand2",
-            command=lambda modo=nome_modo: trocar_modo(modo)
-        )
-        botao.pack(pady=5)
-
-
-# ============================================================
-# MINIMIZAR / RESTAURAR / FECHAR
-# ============================================================
+    descricoes = {
+        "batata": ("🥔", "Texturas simplificadas para priorizar o desempenho"),
+        "normal": ("🖼", "Sem os ajustes de redução de qualidade do modo batata"),
+    }
+    for nome in modos:
+        ativo = nome == atual
+        icone, descricao = descricoes.get(nome.lower(), ("⚙", "Perfil personalizado do DXVK"))
+        cor = COR_FUNDO_SECUNDARIO
+        borda = COR_SUCESSO if ativo else COR_BORDA
+        card = tk.Frame(frame_modos, bg=cor, highlightbackground=borda,
+                        highlightcolor=borda, highlightthickness=1)
+        card.pack(fill="x", pady=(0, 10))
+        card.columnconfigure(0, weight=1)
+        titulo_card = tk.Label(card, text=f"{icone}  {nome}", font=("Segoe UI", 13, "bold"),
+                               bg=cor, fg=COR_TEXTO, anchor="w")
+        titulo_card.grid(row=0, column=0, sticky="ew", padx=14, pady=(12, 3))
+        resumo = tk.Label(card, text=descricao, font=("Segoe UI", 9),
+                          bg=cor, fg=COR_TEXTO_SECUNDARIO, anchor="w",
+                          justify="left", wraplength=310)
+        resumo.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 12))
+        acao = tk.Button(card, text="✓ Ativo" if ativo else "Aplicar",
+                         font=("Segoe UI", 10), bg=COR_BOTAO,
+                         fg=COR_SUCESSO if ativo else COR_TEXTO,
+                         activebackground=COR_BOTAO_ATIVO,
+                         activeforeground=COR_TEXTO, relief="flat", bd=0,
+                         padx=10, pady=7, cursor="hand2",
+                         command=lambda modo=nome: trocar_modo(modo))
+        acao.grid(row=0, column=1, rowspan=2, padx=(0, 14))
 
 def minimizar_janela():
-    janela.overrideredirect(False)
-    janela.iconify()
+    # Minimiza sem recriar o estilo da janela ou perder o botão na barra.
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetParent.argtypes = [wintypes.HWND]
+    user32.GetParent.restype = wintypes.HWND
+    user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.ShowWindow.restype = wintypes.BOOL
+    hwnd = user32.GetParent(janela.winfo_id()) or janela.winfo_id()
+    user32.ShowWindow(hwnd, 6)  # SW_MINIMIZE
 
 
 def restaurar_janela(event=None):
+    if event is not None and event.widget is not janela:
+        return
     try:
         if janela.state() == "normal":
-            janela.overrideredirect(True)
+            janela.after_idle(configurar_barra_de_tarefas)
     except tk.TclError:
         pass
+
+
+_procedimento_janela = None
+_procedimento_original = None
+_hwnd_personalizado = None
+_icones_nativos = []
+
+
+def configurar_icone_nativo(user32, hwnd):
+    if not os.path.isfile(CAMINHO_ICONE):
+        return
+    user32.LoadImageW.argtypes = [wintypes.HINSTANCE, wintypes.LPCWSTR,
+                                 wintypes.UINT, ctypes.c_int, ctypes.c_int, wintypes.UINT]
+    user32.LoadImageW.restype = wintypes.HANDLE
+    user32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT,
+                                   wintypes.WPARAM, wintypes.LPARAM]
+    user32.SendMessageW.restype = ctypes.c_ssize_t
+    if not _icones_nativos:
+        # Usa fontes maiores para evitar ampliar um bitmap de apenas 16 px.
+        for tamanho in (32, 256):
+            icone = user32.LoadImageW(None, CAMINHO_ICONE, 1, tamanho, tamanho, 0x0010)
+            if not icone:
+                raise ctypes.WinError(ctypes.get_last_error())
+            _icones_nativos.append(icone)
+    for tipo, icone in enumerate(_icones_nativos):
+        user32.SendMessageW(hwnd, 0x0080, tipo, icone)  # WM_SETICON
+
+
+def configurar_moldura_nativa(user32, hwnd):
+    """Preserva as animações nativas sem desenhar a barra de título padrão."""
+    global _procedimento_janela, _procedimento_original, _hwnd_personalizado
+    if _hwnd_personalizado == hwnd:
+        return
+
+    resultado_tipo = ctypes.c_ssize_t
+    procedimento_tipo = ctypes.WINFUNCTYPE(
+        resultado_tipo, wintypes.HWND, wintypes.UINT,
+        wintypes.WPARAM, wintypes.LPARAM)
+    set_long = (user32.SetWindowLongPtrW if ctypes.sizeof(ctypes.c_void_p) == 8
+                else user32.SetWindowLongW)
+    set_long.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_ssize_t]
+    set_long.restype = ctypes.c_ssize_t
+    user32.CallWindowProcW.argtypes = [ctypes.c_void_p, wintypes.HWND,
+                                      wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user32.CallWindowProcW.restype = resultado_tipo
+
+    def procedimento(hwnd_atual, mensagem, wparam, lparam):
+        if mensagem == 0x0083:  # WM_NCCALCSIZE: toda a janela é área de conteúdo.
+            return 0
+        return user32.CallWindowProcW(
+            _procedimento_original, hwnd_atual, mensagem, wparam, lparam)
+
+    # A referência global mantém o callback vivo enquanto o Windows o utiliza.
+    _procedimento_janela = procedimento_tipo(procedimento)
+    ctypes.set_last_error(0)
+    _procedimento_original = set_long(
+        hwnd, -4, ctypes.cast(_procedimento_janela, ctypes.c_void_p).value)
+    if not _procedimento_original:
+        raise ctypes.WinError(ctypes.get_last_error())
+    _hwnd_personalizado = hwnd
+
+    estilo = user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE
+    # WS_CAPTION e WS_MINIMIZEBOX permitem ao Windows animar a transição.
+    user32.SetWindowLongW(hwnd, -16, estilo | 0x00C00000 | 0x00020000)
+    user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND,
+                                   ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                   ctypes.c_int, wintypes.UINT]
+    user32.SetWindowPos.restype = wintypes.BOOL
+    user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0037)  # FRAMECHANGED, sem mover.
+
+
+def configurar_barra_de_tarefas():
+    """Mantém a janela sem bordas visível na barra de tarefas do Windows."""
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetParent.argtypes = [wintypes.HWND]
+    user32.GetParent.restype = wintypes.HWND
+    user32.GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.GetWindowLongW.restype = wintypes.LONG
+    user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, wintypes.LONG]
+    user32.SetWindowLongW.restype = wintypes.LONG
+
+    hwnd = user32.GetParent(janela.winfo_id()) or janela.winfo_id()
+    estilo = user32.GetWindowLongW(hwnd, -20)  # GWL_EXSTYLE
+    # WS_EX_APPWINDOW inclui na barra; WS_EX_TOOLWINDOW exclui da barra.
+    novo_estilo = (estilo | 0x00040000) & ~0x00000080
+    if novo_estilo != estilo:
+        ctypes.set_last_error(0)
+        resultado = user32.SetWindowLongW(hwnd, -20, novo_estilo)
+        if resultado == 0 and ctypes.get_last_error():
+            raise ctypes.WinError(ctypes.get_last_error())
+    configurar_moldura_nativa(user32, hwnd)
+    configurar_icone_nativo(user32, hwnd)
+
+
+def mostrar_janela():
+    janela.update_idletasks()
+    configurar_barra_de_tarefas()
+    # O Windows registra o estilo na próxima exibição da janela.
+    janela.withdraw()
+    janela.after(10, janela.deiconify)
 
 
 def fechar_janela():
@@ -784,11 +890,19 @@ def mover_janela(event):
 # JANELA PRINCIPAL (CENTRALIZADA)
 # ============================================================
 
+shell32 = ctypes.WinDLL("shell32", use_last_error=True)
+shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [wintypes.LPCWSTR]
+shell32.SetCurrentProcessExplicitAppUserModelID.restype = ctypes.c_long
+shell32.SetCurrentProcessExplicitAppUserModelID("BDOModeManager.App")
+
 janela = tk.Tk()
 janela.title("BDO Mode Manager")
+CAMINHO_ICONE = os.path.join(PASTA_PROGRAMA, "assets", "bdo-mode-manager-spirit-outline.ico")
+if os.path.isfile(CAMINHO_ICONE):
+    janela.iconbitmap(default=CAMINHO_ICONE)
 
 largura_janela = 520
-altura_janela = 590
+altura_janela = 600
 
 largura_tela = janela.winfo_screenwidth()
 altura_tela = janela.winfo_screenheight()
@@ -798,7 +912,8 @@ pos_y = (altura_tela - altura_janela) // 2
 
 janela.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
 
-janela.resizable(False, False)
+janela.resizable(True, True)
+janela.minsize(520, 600)
 janela.overrideredirect(True)
 janela.configure(bg=COR_FUNDO)
 
@@ -819,6 +934,15 @@ barra_titulo.pack_propagate(False)
 # ============================================================
 # TÍTULO DA BARRA
 # ============================================================
+
+CAMINHO_ICONE_TOPO = os.path.join(PASTA_PROGRAMA, "assets", "bdo-mode-manager-title.png")
+if os.path.isfile(CAMINHO_ICONE_TOPO):
+    icone_topo = tk.PhotoImage(file=CAMINHO_ICONE_TOPO)
+    label_icone_barra = tk.Label(barra_titulo, image=icone_topo,
+                                 bg=COR_FUNDO_SECUNDARIO, bd=0)
+    label_icone_barra.pack(side="left", padx=(8, 0))
+    label_icone_barra.bind("<Button-1>", iniciar_movimento)
+    label_icone_barra.bind("<B1-Motion>", mover_janela)
 
 label_titulo_barra = tk.Label(
     barra_titulo,
@@ -895,161 +1019,133 @@ janela.bind("<Map>", restaurar_janela)
 # TÍTULO PRINCIPAL
 # ============================================================
 
-titulo = tk.Label(
-    janela,
-    text="BDO Mode Manager",
-    font=("Arial", 20, "bold"),
-    bg=COR_FUNDO,
-    fg=COR_TEXTO
-)
-titulo.pack(pady=(25, 5))
+# Layout da interface: instalação, perfil atual, opções e remoção.
+conteudo = tk.Frame(janela, bg=COR_FUNDO)
+conteudo.pack(fill="both", expand=True, padx=24, pady=18)
 
+tk.Label(conteudo, text="BDO Mode Manager", font=("Segoe UI", 20, "bold"),
+         bg=COR_FUNDO, fg=COR_TEXTO, anchor="w").pack(fill="x")
+tk.Label(conteudo, text="Configure o DXVK e escolha a qualidade gráfica",
+         font=("Segoe UI", 10), bg=COR_FUNDO,
+         fg=COR_TEXTO_SECUNDARIO, anchor="w").pack(fill="x", pady=(4, 18))
 
-# ============================================================
-# SUBTÍTULO
-# ============================================================
-
-subtitulo = tk.Label(
-    janela,
-    text="Selecione o modo de jogo:",
-    font=("Arial", 13),
-    bg=COR_FUNDO,
-    fg=COR_TEXTO_SECUNDARIO
-)
-subtitulo.pack(pady=(0, 15))
-
-
-# ============================================================
-# PASTA DO BDO
-# ============================================================
-
-label_bdo = tk.Label(
-    janela,
-    text="Pasta do Black Desert:",
-    font=("Arial", 11, "bold"),
-    bg=COR_FUNDO,
-    fg=COR_TEXTO
-)
-label_bdo.pack(pady=(5, 5))
-
-
-# ============================================================
-# CAMPO DO PATH
-# ============================================================
-
-frame_path = tk.Frame(janela, bg=COR_FUNDO)
-frame_path.pack(padx=20, fill="x")
-
+instalacao = tk.Frame(conteudo, bg=COR_FUNDO_SECUNDARIO,
+                      highlightbackground=COR_BORDA, highlightthickness=1)
+instalacao.pack(fill="x")
+tk.Label(instalacao, text="Instalação do jogo", font=("Segoe UI", 10, "bold"),
+         bg=COR_FUNDO_SECUNDARIO, fg=COR_TEXTO, anchor="w").pack(
+             fill="x", padx=12, pady=(10, 8))
+frame_path = tk.Frame(instalacao, bg=COR_FUNDO_SECUNDARIO)
+frame_path.pack(fill="x", padx=12)
 texto_path = tk.StringVar()
-
-frame_entrada_path = tk.Frame(
-    frame_path,
-    bg=COR_BORDA,
-    bd=1,
-    relief="solid"
-)
-frame_entrada_path.pack(
-    side="left",
-    fill="x",
-    expand=True,
-    ipady=4
-)
-
-entrada_path = tk.Entry(
-    frame_entrada_path,
-    textvariable=texto_path,
-    font=("Arial", 10),
-    state="readonly",
-    readonlybackground=COR_ENTRADA,
-    fg=COR_TEXTO,
-    relief="flat",
-    bd=0,
-    highlightthickness=0
-)
-entrada_path.pack(fill="both", expand=True, padx=6, pady=3)
-
-
-# ============================================================
-# BOTÃO SELECIONAR
-# ============================================================
-
-botao_selecionar = tk.Button(
-    frame_path,
-    text="Selecionar",
-    font=("Arial", 10),
-    bg=COR_BOTAO,
-    fg=COR_BOTAO_TEXTO,
-    activebackground=COR_BOTAO_ATIVO,
-    activeforeground=COR_BOTAO_TEXTO,
-    relief="flat",
-    bd=0,
-    cursor="hand2",
-    command=selecionar_bdo
-)
-botao_selecionar.pack(side="left", padx=(8, 0), ipady=2)
-
-
-# ============================================================
-# STATUS DO BDO
-# ============================================================
-
+entrada_path = tk.Entry(frame_path, textvariable=texto_path, state="readonly",
+                        font=("Segoe UI", 10), readonlybackground=COR_ENTRADA,
+                        fg=COR_TEXTO, relief="flat", bd=0)
+entrada_path.pack(side="left", fill="x", expand=True, ipady=8)
+botao_selecionar = tk.Button(frame_path, text="Alterar pasta", command=selecionar_bdo,
+                             font=("Segoe UI", 9), bg=COR_BOTAO, fg=COR_TEXTO,
+                             activebackground=COR_BOTAO_ATIVO,
+                             activeforeground=COR_TEXTO, relief="flat", bd=0,
+                             padx=10, pady=7, cursor="hand2")
+botao_selecionar.pack(side="right", padx=(8, 0))
 status_var = tk.StringVar()
-
-status_label = tk.Label(
-    janela,
-    textvariable=status_var,
-    font=("Arial", 10, "bold"),
-    bg=COR_FUNDO
-)
-status_label.pack(pady=(8, 5))
-
-
-# ============================================================
-# MODO INSTALADO
-# ============================================================
+status_label = tk.Label(instalacao, textvariable=status_var, font=("Segoe UI", 9),
+                        bg=COR_FUNDO_SECUNDARIO, anchor="w")
+status_label.pack(fill="x", padx=12, pady=(8, 10))
 
 modo_var = tk.StringVar()
+modo_label = tk.Label(conteudo, textvariable=modo_var,
+                      font=("Segoe UI", 10, "bold"), bg=COR_FUNDO, anchor="w")
+modo_label.pack(fill="x", pady=(18, 10))
 
-modo_label = tk.Label(
-    janela,
-    textvariable=modo_var,
-    font=("Arial", 11, "bold"),
-    bg=COR_FUNDO
-)
-modo_label.pack(pady=(3, 15))
-
-
-# ============================================================
-# ÁREA DOS MODOS
-# ============================================================
-
-frame_modos = tk.Frame(janela, bg=COR_FUNDO)
-frame_modos.pack(fill="both", expand=True, padx=20)
-
-
-# ============================================================
-# BOTÃO DESINSTALAR
-# ============================================================
-
-botao_desinstalar = tk.Button(
-    janela,
-    text="Desinstalar",
-    font=("Arial", 12),
-    width=25,
-    height=2,
-    bg=COR_BOTAO,
-    fg=COR_BOTAO_TEXTO,
-    activebackground=COR_BOTAO_ATIVO,
-    activeforeground=COR_BOTAO_TEXTO,
-    relief="flat",
-    bd=0,
-    cursor="hand2",
-    command=desinstalar
-)
-botao_desinstalar.pack(pady=(5, 20))
+# O rodapé fica visível mesmo quando há vários perfis.
+rodape = tk.Frame(conteudo, bg=COR_FUNDO)
+rodape.pack(side="bottom", fill="x", pady=(8, 0))
+tk.Label(rodape, text="Ambos os perfis padrão utilizam Vulkan via DXVK.",
+         font=("Segoe UI", 9), bg=COR_FUNDO, fg=COR_TEXTO_SECUNDARIO,
+         anchor="w").pack(fill="x", pady=(0, 10))
+botao_desinstalar = tk.Button(rodape, text="Remover DXVK", command=desinstalar,
+                              font=("Segoe UI", 10, "bold"), bg=COR_BOTAO, fg=COR_TEXTO,
+                              activebackground=COR_BOTAO_ATIVO,
+                              activeforeground=COR_TEXTO, relief="flat", bd=0,
+                              highlightbackground=COR_BORDA, highlightthickness=1,
+                              padx=12, pady=7, cursor="hand2")
+botao_desinstalar.pack(anchor="e")
 
 
-# ============================================================
+class Tooltip:
+    def __init__(self, widget, texto):
+        self.widget = widget
+        self.texto = texto
+        self.agendamento = None
+        self.popup = None
+        widget.bind("<Enter>", self.agendar, add="+")
+        widget.bind("<Leave>", self.ocultar, add="+")
+        widget.bind("<ButtonPress>", self.ocultar, add="+")
+        widget.bind("<FocusIn>", self.agendar, add="+")
+        widget.bind("<FocusOut>", self.ocultar, add="+")
+        widget.bind("<Destroy>", self.ocultar, add="+")
+
+    def agendar(self, event=None):
+        self.ocultar()
+        self.agendamento = self.widget.after(500, self.mostrar)
+
+    def mostrar(self):
+        self.agendamento = None
+        self.popup = tk.Toplevel(self.widget)
+        self.popup.withdraw()
+        self.popup.overrideredirect(True)
+        tk.Label(self.popup, text=self.texto, justify="left", wraplength=310,
+                 font=("Segoe UI", 9), bg=COR_FUNDO_SECUNDARIO, fg=COR_TEXTO,
+                 padx=12, pady=10, relief="solid", bd=1).pack()
+        self.popup.update_idletasks()
+        x = max(0, min(self.widget.winfo_rootx(),
+                       self.widget.winfo_screenwidth() - self.popup.winfo_reqwidth()))
+        y = max(0, self.widget.winfo_rooty() - self.popup.winfo_reqheight() - 8)
+        self.popup.geometry(f"+{x}+{y}")
+        self.popup.deiconify()
+
+    def ocultar(self, event=None):
+        if self.agendamento is not None:
+            self.widget.after_cancel(self.agendamento)
+            self.agendamento = None
+        if self.popup is not None:
+            self.popup.destroy()
+            self.popup = None
+
+
+tooltip_remover = Tooltip(botao_desinstalar,
+    "Remove os arquivos do DXVK e a configuração do perfil da pasta do jogo.\n\n"
+    "Feche o jogo antes de remover. Você poderá confirmar ou cancelar "
+    "ao clicar no botão.")
+
+# Lista rolável para acomodar perfis personalizados.
+lista = tk.Frame(conteudo, bg=COR_FUNDO)
+lista.pack(fill="both", expand=True)
+canvas_modos = tk.Canvas(lista, bg=COR_FUNDO, highlightthickness=0)
+scroll_modos = tk.Scrollbar(lista, orient="vertical", command=canvas_modos.yview)
+def atualizar_barra_perfis(inicio, fim):
+    scroll_modos.set(inicio, fim)
+    precisa_rolagem = float(inicio) > 0.0 or float(fim) < 1.0
+    if precisa_rolagem and not scroll_modos.winfo_manager():
+        scroll_modos.pack(side="right", fill="y", before=canvas_modos)
+    elif not precisa_rolagem and scroll_modos.winfo_manager():
+        scroll_modos.pack_forget()
+
+
+canvas_modos.configure(yscrollcommand=atualizar_barra_perfis)
+canvas_modos.pack(side="left", fill="both", expand=True)
+frame_modos = tk.Frame(canvas_modos, bg=COR_FUNDO)
+janela_modos = canvas_modos.create_window((0, 0), window=frame_modos, anchor="nw")
+frame_modos.bind("<Configure>", lambda event: canvas_modos.configure(
+    scrollregion=canvas_modos.bbox("all")))
+canvas_modos.bind("<Configure>", lambda event: canvas_modos.itemconfigure(
+    janela_modos, width=event.width))
+def rolar_perfis(event):
+    if scroll_modos.winfo_manager():
+        canvas_modos.yview_scroll(int(-event.delta / 120), "units")
+janela.bind("<MouseWheel>", rolar_perfis)
+
 # INICIA PROGRAMA
 # ============================================================
 
@@ -1072,4 +1168,5 @@ atualizar_status()
 criar_botoes_modos()
 atualizar_modo_instalado()
 
+janela.after(0, mostrar_janela)
 janela.mainloop()
