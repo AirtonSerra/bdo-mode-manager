@@ -519,6 +519,66 @@ def aplicar_dlls(pasta_bin64_bdo):
 # APLICAR MODO
 # ============================================================
 
+def listar_processos_windows():
+    """Consulta processos sem encerrar ou modificar nenhum deles."""
+    class EntradaProcesso(ctypes.Structure):
+        _fields_ = [
+            ("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD),
+            ("th32ProcessID", wintypes.DWORD), ("th32DefaultHeapID", ctypes.c_size_t),
+            ("th32ModuleID", wintypes.DWORD), ("cntThreads", wintypes.DWORD),
+            ("th32ParentProcessID", wintypes.DWORD), ("pcPriClassBase", wintypes.LONG),
+            ("dwFlags", wintypes.DWORD), ("szExeFile", wintypes.WCHAR * 260),
+        ]
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+    kernel32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    kernel32.Process32FirstW.argtypes = [wintypes.HANDLE, ctypes.POINTER(EntradaProcesso)]
+    kernel32.Process32FirstW.restype = wintypes.BOOL
+    kernel32.Process32NextW.argtypes = [wintypes.HANDLE, ctypes.POINTER(EntradaProcesso)]
+    kernel32.Process32NextW.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    snapshot = kernel32.CreateToolhelp32Snapshot(0x00000002, 0)
+    if snapshot == ctypes.c_void_p(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        entrada = EntradaProcesso()
+        entrada.dwSize = ctypes.sizeof(entrada)
+        nomes = set()
+        disponivel = kernel32.Process32FirstW(snapshot, ctypes.byref(entrada))
+        while disponivel:
+            nomes.add(entrada.szExeFile.casefold())
+            disponivel = kernel32.Process32NextW(snapshot, ctypes.byref(entrada))
+        erro = ctypes.get_last_error()
+        if erro != 18:  # ERROR_NO_MORE_FILES: término normal da enumeração.
+            raise ctypes.WinError(erro)
+        return nomes
+    finally:
+        kernel32.CloseHandle(snapshot)
+
+
+def permitir_alteracao_com_jogo_fechado():
+    try:
+        processos = listar_processos_windows()
+    except OSError:
+        messagebox.showerror(
+            "Não foi possível verificar o jogo",
+            "Não foi possível verificar se o Black Desert está aberto.\n\n"
+            "Nenhum arquivo foi alterado. Tente novamente antes de continuar.")
+        return False
+    nomes_jogo = {
+        "blackdesert.exe", "blackdesert.bin", "blackdesert64.exe",
+        "blackdesert64.bin", "blackdesert32.exe", "blackdesert32.bin",
+    }
+    if nomes_jogo.intersection(nome.casefold() for nome in processos):
+        messagebox.showwarning(
+            "Black Desert está aberto",
+            "Feche o Black Desert antes de aplicar um perfil ou remover o DXVK.\n\n"
+            "Nenhum arquivo foi alterado.")
+        return False
+    return True
+
+
 def trocar_modo(nome_modo):
     try:
         if not PASTA_BDO:
@@ -551,6 +611,9 @@ def trocar_modo(nome_modo):
             raise Exception(erro)
 
         arquivo_destino = os.path.join(pasta_bin64_bdo, NOME_ARQUIVO)
+
+        if not permitir_alteracao_com_jogo_fechado():
+            return
 
         backup_dxvk = None
         if os.path.isfile(arquivo_destino):
@@ -639,6 +702,9 @@ def desinstalar():
 
         pasta_bin64_bdo = obter_bin64_bdo()
 
+        if not permitir_alteracao_com_jogo_fechado():
+            return
+
         confirmar = messagebox.askyesno(
             "BDO Mode Manager - Desinstalar",
             "Isso irá remover da bin64 do BDO:\n\n"
@@ -648,6 +714,10 @@ def desinstalar():
         )
 
         if not confirmar:
+            return
+
+        # Verifica novamente caso o jogo tenha aberto durante a confirmação.
+        if not permitir_alteracao_com_jogo_fechado():
             return
 
         removidos = []
