@@ -8,6 +8,8 @@ from tkinter import filedialog, messagebox
 import winreg
 import atexit
 import time
+import subprocess
+import uuid
 
 
 def adquirir_instancia_unica(nome="Local\\BDOModeManager.SingleInstance"):
@@ -885,6 +887,66 @@ _procedimento_janela = None
 _procedimento_original = None
 _hwnd_personalizado = None
 _icones_nativos = []
+_hwnd_atalho = None
+
+
+def configurar_atalho_da_janela(hwnd):
+    """Informa ao Windows como reabrir o app ao fixar sua janela."""
+    global _hwnd_atalho
+    if _hwnd_atalho == hwnd:
+        return
+
+    class GUID(ctypes.Structure):
+        _fields_ = [("dados", ctypes.c_ubyte * 16)]
+
+    class PROPERTYKEY(ctypes.Structure):
+        _fields_ = [("fmtid", GUID), ("pid", wintypes.DWORD)]
+
+    class PROPVARIANT(ctypes.Structure):
+        _fields_ = [("vt", ctypes.c_ushort),
+                    ("reservados", ctypes.c_ushort * 3),
+                    ("valor", ctypes.c_void_p * 2)]
+
+    def guid(texto):
+        return GUID((ctypes.c_ubyte * 16).from_buffer_copy(uuid.UUID(texto).bytes_le))
+
+    shell32 = ctypes.WinDLL("shell32")
+    shell32.SHGetPropertyStoreForWindow.argtypes = [
+        wintypes.HWND, ctypes.POINTER(GUID), ctypes.POINTER(ctypes.c_void_p)]
+    shell32.SHGetPropertyStoreForWindow.restype = ctypes.c_long
+
+    def verificar(resultado):
+        if resultado < 0:
+            raise OSError(resultado, "Não foi possível configurar o atalho da janela")
+
+    interface = guid("886d8eeb-8cf2-4446-8d02-cdba1dbdcf99")
+    armazenamento = ctypes.c_void_p()
+    verificar(shell32.SHGetPropertyStoreForWindow(
+        hwnd, ctypes.byref(interface), ctypes.byref(armazenamento)))
+    tabela = ctypes.cast(armazenamento, ctypes.POINTER(
+        ctypes.POINTER(ctypes.c_void_p))).contents
+    liberar = ctypes.WINFUNCTYPE(wintypes.ULONG, ctypes.c_void_p)(tabela[2])
+    definir = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p,
+                                ctypes.POINTER(PROPERTYKEY),
+                                ctypes.POINTER(PROPVARIANT))(tabela[6])
+    comando = subprocess.list2cmdline([
+        os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "wscript.exe"),
+        os.path.join(PASTA_PROGRAMA, "launch.vbs")])
+    # As propriedades de reabertura devem preceder o AppUserModel.ID.
+    propriedades = [(2, comando), (3, CAMINHO_ICONE + ",0"),
+                    (4, "BDO Mode Manager"), (5, "BDOModeManager.App")]
+    try:
+        for identificador, texto in propriedades:
+            chave = PROPERTYKEY(guid("9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3"), identificador)
+            valor = PROPVARIANT()
+            # SetValue copia o texto; o buffer permanece vivo durante a chamada.
+            buffer = ctypes.create_unicode_buffer(texto)
+            valor.vt = 31  # VT_LPWSTR
+            valor.valor[0] = ctypes.cast(buffer, ctypes.c_void_p).value
+            verificar(definir(armazenamento, ctypes.byref(chave), ctypes.byref(valor)))
+    finally:
+        liberar(armazenamento)
+    _hwnd_atalho = hwnd
 
 
 def configurar_icone_nativo(user32, hwnd):
@@ -976,6 +1038,7 @@ def configurar_barra_de_tarefas():
             raise ctypes.WinError(ctypes.get_last_error())
     configurar_moldura_nativa(user32, hwnd)
     configurar_icone_nativo(user32, hwnd)
+    configurar_atalho_da_janela(hwnd)
 
 
 def trazer_janela_para_frente():

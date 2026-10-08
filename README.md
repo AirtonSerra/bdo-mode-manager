@@ -81,6 +81,7 @@ bdo-mode-manager/
 1. Baixe o ZIP para Windows na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases), siga o aviso acima e extraia todo o conteúdo para uma pasta.
 2. Feche o Black Desert Online antes de aplicar ou remover um perfil.
 3. No primeiro uso, execute **setup_shortcuts.vbs** para configurar o ícone e criar o atalho na área de trabalho. Depois abra **BDO Mode Manager** na pasta extraída ou na área de trabalho. Mantenha os arquivos da pasta juntos; se mover a pasta, execute o configurador novamente.
+   Para fixar na barra de tarefas, abra o aplicativo e use **Fixar na barra de tarefas** no ícone da janela. Se você já tinha um item fixado que perdeu o ícone ou não abre o app, desafixe esse item, feche e reabra o aplicativo atualizado e fixe novamente. Se mover a pasta do aplicativo, refaça também a fixação.
 
    Se necessário, também é possível executar diretamente:
 
