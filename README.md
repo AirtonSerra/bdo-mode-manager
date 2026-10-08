@@ -9,7 +9,7 @@ O programa automatiza a instalação das DLLs e a troca entre os perfis **Normal
 - Localiza automaticamente a instalação do Black Desert Online ou permite selecionar a pasta manualmente.
 - Salva o caminho do jogo em `config.json` para reutilizá-lo nas próximas aberturas.
 - Aplica o `dxvk.conf` do perfil escolhido e copia as DLLs para a pasta `bin64` do jogo, sem sobrescrever DLLs existentes.
-- Identifica o perfil aplicado comparando o hash SHA-256 do `dxvk.conf` instalado com os perfis disponíveis.
+- Identifica qualquer perfil comparando as opções ativas do `dxvk.conf` instalado com os perfis disponíveis, ignorando comentários, espaços ao redor das opções, ordem das linhas e diferenças de quebra de linha.
 - Faz backup temporário do `dxvk.conf` durante a aplicação e tenta reverter as alterações em caso de falha.
 - Remove as configurações e as DLLs correspondentes ao usar **Remover DXVK**.
 - Adapta a interface ao tema claro ou escuro do Windows.
@@ -94,7 +94,9 @@ Para personalizar um perfil, edite seu `dxvk.conf` e aplique-o novamente. Para a
 
 Ao aplicar um perfil, o programa faz uma cópia temporária do `dxvk.conf` existente, instala a configuração selecionada e copia as DLLs ausentes para a pasta `bin64` do jogo. Se houver falha, tenta remover as DLLs copiadas nessa operação e restaurar a configuração anterior. O backup temporário é removido ao final do processo.
 
-O modo instalado é identificado pelo conteúdo do `dxvk.conf`. A indicação **Nenhum** significa que não foi encontrado um perfil correspondente; ela não verifica se o jogo está usando Vulkan.
+O perfil instalado é identificado pelas opções ativas do `dxvk.conf`, sem depender do nome do perfil. Comentários, linhas vazias, ordem das opções, quebras de linha LF/CRLF e a marca BOM do UTF-8 não interferem na comparação. Os valores `True`/`true`, `False`/`false` e `Auto`/`auto` são considerados equivalentes; diferenças nos demais valores continuam relevantes.
+
+Quando não há correspondência, a interface distingue **Sem configuração instalada**, **Configuração personalizada ou desconhecida** e **Configuração ilegível ou inválida**. Se vários perfis têm as mesmas opções, informa **Perfis equivalentes** sem marcar um deles como ativo arbitrariamente. Essas indicações identificam a configuração; não verificam se o jogo está usando Vulkan.
 
 A desinstalação remove o `dxvk.conf` e as DLLs com os mesmos nomes das presentes na pasta `bin64` do programa. Ela não restaura um backup permanente da instalação original e pode remover DLLs de mesmo nome que já existiam antes do uso do gerenciador.
 
