@@ -1,0 +1,38 @@
+name: Publicar release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verificar o aplicativo
+        run: python -m unittest discover -s tests -v
+      - name: Montar pacote do usuário final
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: python scripts/package_release.py "$RELEASE_VERSION"
+      - name: Publicar na aba Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_VERSION" dist/*.zip dist/*.sha256 \
+            --verify-tag --latest \
+            --title "BDO Mode Manager $RELEASE_VERSION" \
+            --notes-file .github/release-notes.md

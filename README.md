@@ -12,6 +12,7 @@ O programa automatiza a instalação das DLLs e a troca entre os perfis **Normal
 - Identifica qualquer perfil comparando as opções ativas do `dxvk.conf` instalado com os perfis disponíveis, ignorando comentários, espaços ao redor das opções, ordem das linhas e diferenças de quebra de linha.
 - Faz backup temporário do `dxvk.conf` durante a aplicação e tenta reverter as alterações em caso de falha.
 - Remove as configurações e as DLLs correspondentes ao usar **Remover DXVK**.
+- Bloqueia a aplicação de perfis e a remoção do DXVK enquanto o Black Desert está aberto; se não conseguir verificar os processos, não altera os arquivos.
 - Adapta a interface ao tema claro ou escuro do Windows.
 - Exibe cartões com descrições dos perfis, destaca o perfil ativo e mostra a barra de rolagem apenas quando necessária.
 - Usa um ícone próprio na barra de título e na barra de tarefas, com animações nativas ao minimizar e restaurar.
@@ -20,7 +21,7 @@ O programa automatiza a instalação das DLLs e a troca entre os perfis **Normal
 ## 🖥️ Requisitos
 
 - Windows.
-- Python 3 com Tkinter instalado. O programa utiliza apenas módulos da biblioteca padrão, sem dependências Python externas.
+- Python 3 com Tkinter instalado e a extensão `.pyw` associada ao Python. O programa utiliza apenas módulos da biblioteca padrão, sem dependências Python externas.
 - Placa de vídeo e driver com suporte a Vulkan compatível com as DLLs DXVK incluídas.
 - Black Desert Online instalado, com a pasta `bin64` acessível para gravação.
 
@@ -30,6 +31,7 @@ Mantenha o script, as DLLs e os perfis na seguinte organização:
 
 ```text
 bdo-mode-manager/
+├── BDO Mode Manager.lnk
 ├── BDO_Mode_Manager.pyw
 ├── LICENSE
 ├── README.md
@@ -40,7 +42,7 @@ bdo-mode-manager/
 ├── bin64/
 │   ├── d3d11.dll
 │   └── dxgi.dll
-└── Modos de jogo/
+└── game_modes/
     ├── Batata/
     │   └── dxvk.conf
     └── Normal/
@@ -49,10 +51,11 @@ bdo-mode-manager/
 
 | Arquivo ou pasta | Função |
 |---|---|
+| `BDO Mode Manager.lnk` | Atalho com ícone próprio; entrada principal do aplicativo. Mantenha-o na pasta do app. |
 | `BDO_Mode_Manager.pyw` | Interface e gerenciamento dos arquivos do jogo. |
 | `assets/` | Ícone do aplicativo e imagem da barra de título. |
 | `bin64/` | DLLs DXVK copiadas para a pasta `bin64` do jogo. |
-| `Modos de jogo/<nome>/dxvk.conf` | Configuração gráfica de cada perfil. |
+| `game_modes/<nome>/dxvk.conf` | Configuração gráfica de cada perfil. |
 | `config.json` | Caminho salvo da instalação do jogo; criado ou atualizado pelo aplicativo. |
 
 ## ⚠️ Avisos
@@ -65,15 +68,15 @@ bdo-mode-manager/
 
 ## ▶️ Como usar
 
-1. Baixe o projeto mantendo a estrutura de pastas acima.
+1. Baixe o ZIP para Windows na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases) e extraia todo o conteúdo para uma pasta.
 2. Feche o Black Desert Online antes de aplicar ou remover um perfil.
-3. Na pasta do projeto, execute:
+3. Abra o atalho **BDO Mode Manager** (`BDO Mode Manager.lnk`) dentro da pasta extraída. Ele é a entrada principal do aplicativo e usa o ícone personalizado. Mantenha-o junto do script e da pasta `assets`; para colocá-lo na área de trabalho, crie um atalho para esse atalho.
+
+   Se necessário, também é possível executar diretamente:
 
    ```powershell
    pythonw .\BDO_Mode_Manager.pyw
    ```
-
-   Também é possível abrir o arquivo com duplo clique se a extensão `.pyw` estiver associada ao Python.
 
 4. Aguarde a localização automática do jogo. Caso necessário, clique em **Alterar pasta** e escolha a pasta de instalação que contém `bin64`.
 5. Clique em **Aplicar** no cartão **Batata** ou **Normal**. O perfil identificado fica destacado como **Ativo**.
@@ -88,7 +91,7 @@ bdo-mode-manager/
 
 **Os dois perfis usam DXVK/Vulkan.** Selecionar **Normal** não remove essa camada nem retorna ao DirectX original. Para remover a camada instalada pelo gerenciador, use **Remover DXVK**.
 
-Para personalizar um perfil, edite seu `dxvk.conf` e aplique-o novamente. Para adicionar outro perfil, crie uma subpasta em `Modos de jogo/` com um `dxvk.conf`; ela aparecerá na lista na próxima abertura do aplicativo.
+Para personalizar um perfil, edite seu `dxvk.conf` e aplique-o novamente. Para adicionar outro perfil, crie uma subpasta em `game_modes/` com um `dxvk.conf`; ela aparecerá na lista na próxima abertura do aplicativo.
 
 ## ⚙️ Como funciona
 
