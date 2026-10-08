@@ -11,8 +11,11 @@ O programa automatiza a instalação das DLLs e a troca entre os perfis **Normal
 - Aplica o `dxvk.conf` do perfil escolhido e copia as DLLs para a pasta `bin64` do jogo, sem sobrescrever DLLs existentes.
 - Identifica o perfil aplicado comparando o hash SHA-256 do `dxvk.conf` instalado com os perfis disponíveis.
 - Faz backup temporário do `dxvk.conf` durante a aplicação e tenta reverter as alterações em caso de falha.
-- Remove as configurações e as DLLs correspondentes ao usar **Desinstalar**.
+- Remove as configurações e as DLLs correspondentes ao usar **Remover DXVK**.
 - Adapta a interface ao tema claro ou escuro do Windows.
+- Exibe cartões com descrições dos perfis, destaca o perfil ativo e mostra a barra de rolagem apenas quando necessária.
+- Usa um ícone próprio na barra de título e na barra de tarefas, com animações nativas ao minimizar e restaurar.
+- Explica a remoção do DXVK por um tooltip no botão **Remover DXVK**.
 
 ## 🖥️ Requisitos
 
@@ -30,6 +33,10 @@ bdo-mode-manager/
 ├── BDO_Mode_Manager.pyw
 ├── LICENSE
 ├── README.md
+├── assets/
+│   ├── bdo-mode-manager-spirit-outline.ico
+│   ├── bdo-mode-manager-spirit-outline.png
+│   └── bdo-mode-manager-title.png
 ├── bin64/
 │   ├── d3d11.dll
 │   └── dxgi.dll
@@ -43,6 +50,7 @@ bdo-mode-manager/
 | Arquivo ou pasta | Função |
 |---|---|
 | `BDO_Mode_Manager.pyw` | Interface e gerenciamento dos arquivos do jogo. |
+| `assets/` | Ícone do aplicativo e imagem da barra de título. |
 | `bin64/` | DLLs DXVK copiadas para a pasta `bin64` do jogo. |
 | `Modos de jogo/<nome>/dxvk.conf` | Configuração gráfica de cada perfil. |
 | `config.json` | Caminho salvo da instalação do jogo; criado ou atualizado pelo aplicativo. |
@@ -67,9 +75,9 @@ bdo-mode-manager/
 
    Também é possível abrir o arquivo com duplo clique se a extensão `.pyw` estiver associada ao Python.
 
-4. Aguarde a localização automática do jogo. Caso necessário, clique em **Selecionar** e escolha a pasta de instalação que contém `bin64`.
-5. Clique em **Batata** ou **Normal** para aplicar o perfil desejado.
-6. Para remover os arquivos do DXVK e a configuração aplicada, clique em **Desinstalar** e confirme.
+4. Aguarde a localização automática do jogo. Caso necessário, clique em **Alterar pasta** e escolha a pasta de instalação que contém `bin64`.
+5. Clique em **Aplicar** no cartão **Batata** ou **Normal**. O perfil identificado fica destacado como **Ativo**.
+6. Para remover os arquivos do DXVK e a configuração aplicada, clique em **Remover DXVK** e confirme.
 
 ## 🎨 Perfis disponíveis
 
@@ -78,7 +86,7 @@ bdo-mode-manager/
 | 🥔 **Batata** | Configura um LOD de texturas elevado (`d3d11.samplerLodBias`), desativa MSAA e ajusta tesselação e filtragem anisotrópica para reduzir a qualidade gráfica. |
 | 🖼️ **Normal** | Usa o perfil sem os ajustes específicos de redução de qualidade do modo batata, mantendo as demais configurações DXVK presentes no arquivo. |
 
-**Os dois perfis usam DXVK/Vulkan.** Selecionar **Normal** não remove essa camada nem retorna ao DirectX original. Para remover a camada instalada pelo gerenciador, use **Desinstalar**.
+**Os dois perfis usam DXVK/Vulkan.** Selecionar **Normal** não remove essa camada nem retorna ao DirectX original. Para remover a camada instalada pelo gerenciador, use **Remover DXVK**.
 
 Para personalizar um perfil, edite seu `dxvk.conf` e aplique-o novamente. Para adicionar outro perfil, crie uma subpasta em `Modos de jogo/` com um `dxvk.conf`; ela aparecerá na lista na próxima abertura do aplicativo.
 
