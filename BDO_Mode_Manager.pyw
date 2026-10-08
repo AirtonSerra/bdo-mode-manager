@@ -1,5 +1,4 @@
 import os
-import sys
 import json
 import shutil
 import hashlib
@@ -14,16 +13,8 @@ import winreg
 
 NOME_ARQUIVO = "dxvk.conf"
 
-# Pasta onde o próprio programa está localizado.
-# Quando rodando como .pyw, usa o caminho do script.
-# Quando compilado com PyInstaller (--onefile), usa a pasta
-# onde o .exe está, e não a pasta temporária de extração.
-if getattr(sys, "frozen", False):
-    PASTA_PROGRAMA = os.path.dirname(sys.executable)
-else:
-    PASTA_PROGRAMA = os.path.dirname(
-        os.path.abspath(__file__)
-    )
+# Pasta onde o script está localizado.
+PASTA_PROGRAMA = os.path.dirname(os.path.abspath(__file__))
 
 # Pasta dos modos de jogo
 PASTA_MODOS = os.path.join(
@@ -42,7 +33,7 @@ PASTA_BDO = ""
 
 # Arquivo de configuração onde o path do BDO é salvo, para não
 # precisar procurar/selecionar de novo a cada abertura.
-# Fica na própria pasta do programa (ao lado do .pyw/.exe) —
+# Fica na própria pasta do programa (ao lado do .pyw) —
 # não cria nada em %APPDATA% nem em outro lugar do PC do usuário.
 ARQUIVO_CONFIG = os.path.join(PASTA_PROGRAMA, "config.json")
 
