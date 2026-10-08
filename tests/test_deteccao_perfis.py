@@ -47,11 +47,11 @@ class DeteccaoPerfisTests(unittest.TestCase):
 
     def test_perfis_do_projeto_com_lf_crlf_e_bom(self):
         for nome in ("Normal", "Batata"):
-            texto = (RAIZ / "Modos de jogo" / nome / "dxvk.conf").read_text(encoding="utf-8")
+            texto = (RAIZ / "game_modes" / nome / "dxvk.conf").read_text(encoding="utf-8")
             self.perfil(nome, texto.replace("\n", "\r\n"))
         for nome in ("Normal", "Batata"):
             with self.subTest(nome=nome):
-                texto = (RAIZ / "Modos de jogo" / nome / "dxvk.conf").read_text(encoding="utf-8")
+                texto = (RAIZ / "game_modes" / nome / "dxvk.conf").read_text(encoding="utf-8")
                 self.instalar("\ufeff" + texto)
                 self.assertEqual(self.detectar()[0], nome)
 

@@ -20,7 +20,7 @@ PASTA_PROGRAMA = os.path.dirname(os.path.abspath(__file__))
 # Pasta dos modos de jogo
 PASTA_MODOS = os.path.join(
     PASTA_PROGRAMA,
-    "Modos de jogo"
+    "game_modes"
 )
 
 # Pasta bin64 da raiz do programa
@@ -768,7 +768,7 @@ def criar_botoes_modos():
     modos = listar_modos()
     atual = identificar_modo_instalado()
     if not modos:
-        tk.Label(frame_modos, text="Nenhum perfil encontrado em Modos de jogo/.",
+        tk.Label(frame_modos, text="Nenhum perfil encontrado em game_modes/.",
                  bg=COR_FUNDO, fg=COR_TEXTO_SECUNDARIO).pack(pady=12)
         return
 
