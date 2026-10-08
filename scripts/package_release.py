@@ -10,6 +10,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 ROOT = Path(__file__).resolve().parents[1]
 FILES = (
     "BDO Mode Manager.lnk",
+    "launch.vbs",
     "BDO_Mode_Manager.pyw",
     "README.md",
     "LICENSE",

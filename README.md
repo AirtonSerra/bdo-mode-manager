@@ -52,6 +52,7 @@ bdo-mode-manager/
 | Arquivo ou pasta | Função |
 |---|---|
 | `BDO Mode Manager.lnk` | Atalho com ícone próprio; entrada principal do aplicativo. Mantenha-o na pasta do app. |
+| `launch.vbs` | Inicializador usado pelo atalho para localizar o Python e abrir o aplicativo. |
 | `BDO_Mode_Manager.pyw` | Interface e gerenciamento dos arquivos do jogo. |
 | `assets/` | Ícone do aplicativo e imagem da barra de título. |
 | `bin64/` | DLLs DXVK copiadas para a pasta `bin64` do jogo. |
@@ -70,7 +71,7 @@ bdo-mode-manager/
 
 1. Baixe o ZIP para Windows na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases) e extraia todo o conteúdo para uma pasta.
 2. Feche o Black Desert Online antes de aplicar ou remover um perfil.
-3. Abra o atalho **BDO Mode Manager** (`BDO Mode Manager.lnk`) dentro da pasta extraída. Ele é a entrada principal do aplicativo e usa o ícone personalizado. Mantenha-o junto do script e da pasta `assets`; para colocá-lo na área de trabalho, crie um atalho para esse atalho.
+3. Abra o atalho **BDO Mode Manager** (`BDO Mode Manager.lnk`) dentro da pasta extraída. Ele é a entrada principal do aplicativo e usa o ícone personalizado. Mantenha-o junto do inicializador `launch.vbs`, do script e da pasta `assets`; para colocá-lo na área de trabalho, crie um atalho para esse atalho.
 
    Se necessário, também é possível executar diretamente:
 
