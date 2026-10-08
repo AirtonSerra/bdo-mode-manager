@@ -704,7 +704,7 @@ def criar_botoes_modos():
 
     descricoes = {
         "batata": ("🥔", "Texturas simplificadas para priorizar o desempenho"),
-        "normal": ("🖼", "Sem os ajustes de redução de qualidade do modo batata"),
+        "normal": ("🖼", "Qualidade gráfica original, usando DXVK/Vulkan no lugar do DirectX"),
     }
     for nome in modos:
         ativo = nome == atual
@@ -1136,7 +1136,8 @@ class Tooltip:
 
 
 tooltip_remover = Tooltip(botao_desinstalar,
-    "Remove os arquivos do DXVK e a configuração do perfil da pasta do jogo.\n\n"
+    "Remove os arquivos do DXVK e a configuração do perfil da pasta do jogo, "
+    "permitindo que ele volte a usar o DirectX original.\n\n"
     "Feche o jogo antes de remover. Você poderá confirmar ou cancelar "
     "ao clicar no botão.")
 

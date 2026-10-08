@@ -84,7 +84,7 @@ bdo-mode-manager/
 | Perfil | Comportamento |
 |---|---|
 | 🥔 **Batata** | Configura um LOD de texturas elevado (`d3d11.samplerLodBias`), desativa MSAA e ajusta tesselação e filtragem anisotrópica para reduzir a qualidade gráfica. |
-| 🖼️ **Normal** | Usa o perfil sem os ajustes específicos de redução de qualidade do modo batata, mantendo as demais configurações DXVK presentes no arquivo. |
+| 🖼️ **Normal** | Mantém a qualidade gráfica original do jogo, usando DXVK para renderizar com Vulkan no lugar do DirectX. |
 
 **Os dois perfis usam DXVK/Vulkan.** Selecionar **Normal** não remove essa camada nem retorna ao DirectX original. Para remover a camada instalada pelo gerenciador, use **Remover DXVK**.
 
