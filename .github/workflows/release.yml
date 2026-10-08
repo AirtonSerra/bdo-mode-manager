@@ -33,16 +33,12 @@ jobs:
           RELEASE_VERSION: ${{ github.ref_name }}
         run: |
           if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_VERSION" --draft \
-              --title "BDO Mode Manager $RELEASE_VERSION" \
-              --notes-file .github/release-notes.md
-            gh release upload "$RELEASE_VERSION" dist/*.zip dist/*.sha256 --clobber
-          else
-            gh release create "$RELEASE_VERSION" dist/*.zip dist/*.sha256 \
-              --verify-tag --draft \
-              --title "BDO Mode Manager $RELEASE_VERSION" \
-              --notes-file .github/release-notes.md
+            gh release delete "$RELEASE_VERSION" --yes
           fi
+          gh release create "$RELEASE_VERSION" dist/*.zip dist/*.sha256 \
+            --verify-tag --draft \
+            --title "BDO Mode Manager $RELEASE_VERSION" \
+            --notes-file .github/release-notes.md
           gh release edit "$RELEASE_VERSION" --draft=false --latest
       - name: Remover releases de tentativa após publicar a versão definitiva
         if: github.ref_name == 'v1.0.0'
