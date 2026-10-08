@@ -74,14 +74,15 @@ bdo-mode-manager/
 ## ▶️ Como usar
 
 > [!IMPORTANT]
-> **Antes de extrair o ZIP no Windows:** clique com o botão direito no ZIP baixado → **Propriedades** → marque **Desbloquear**, se essa opção aparecer → **Aplicar**. Depois extraia todo o conteúdo. Isso pode resolver o aviso do Controle de Aplicativo Inteligente sobre arquivos vindos da Internet, como confirmado no uso desta versão.
+> **Desbloqueie o ZIP antes de extrair no Windows.** Clique com o botão direito no arquivo baixado → **Propriedades** → marque **Desbloquear**, se disponível → **Aplicar**. Só então extraia o pacote e execute o configurador.
 >
-> Se já extraiu o pacote antes de desbloquear, desbloqueie o ZIP e extraia novamente para uma nova pasta. Faça isso apenas para o pacote obtido deste repositório; não é necessário desativar a proteção do Windows. Se o bloqueio continuar, esse procedimento não garante a liberação de arquivos considerados não confiáveis pelo sistema.
+> Se aparecer o aviso **“O Controle de Aplicativo Inteligente bloqueou um arquivo”**, e você já tiver extraído o ZIP, desbloqueie o ZIP original e extraia novamente para uma nova pasta. Esse procedimento resolveu o bloqueio observado, sem desativar a proteção do Windows. Use apenas o pacote deste repositório; se o aviso continuar, não há garantia de liberação por esse procedimento.
 
-1. Baixe o ZIP para Windows na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases), siga o aviso acima e extraia todo o conteúdo para uma pasta.
-2. Feche o Black Desert Online antes de aplicar ou remover um perfil.
-3. No primeiro uso, execute **setup_shortcuts.vbs** para configurar o ícone e criar o atalho na área de trabalho. Depois abra **BDO Mode Manager** na pasta extraída ou na área de trabalho. Mantenha os arquivos da pasta juntos; se mover a pasta, execute o configurador novamente.
-   Para fixar na barra de tarefas, abra o aplicativo e use **Fixar na barra de tarefas** no ícone da janela. Se você já tinha um item fixado que perdeu o ícone ou não abre o app, desafixe esse item, feche e reabra o aplicativo atualizado e fixe novamente. Se mover a pasta do aplicativo, refaça também a fixação.
+1. Na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases/latest), abra **Assets** e baixe **BDO-Mode-Manager-v<VERSÃO>-Windows.zip** da versão mais recente. Escolha o pacote para Windows; os arquivos **Source code** são cópias do código do repositório.
+2. Siga o aviso acima para desbloquear o ZIP e extraia **todo o conteúdo** para uma pasta. Não abra o aplicativo dentro do ZIP e mantenha os arquivos extraídos juntos.
+3. Instale **Python 3 com Tkinter e o launcher do Python**, caso ainda não estejam instalados. O pacote usa Python e não é um executável independente.
+4. No primeiro uso, execute **setup_shortcuts.vbs** na pasta extraída. Ele configura o ícone em `%LOCALAPPDATA%\BDOModeManager` e cria o atalho na área de trabalho.
+5. Abra o atalho **BDO Mode Manager** na pasta extraída ou na área de trabalho. Essa é a entrada principal do aplicativo; o inicializador localiza o Python sem depender da associação de arquivos `.pyw`.
 
    Se necessário, também é possível executar diretamente:
 
@@ -89,9 +90,17 @@ bdo-mode-manager/
    pythonw .\BDO_Mode_Manager.pyw
    ```
 
-4. Aguarde a localização automática do jogo. Caso necessário, clique em **Alterar pasta** e escolha a pasta de instalação que contém `bin64`.
-5. Clique em **Aplicar** no cartão **Batata** ou **Normal**. O perfil identificado fica destacado como **Ativo**.
-6. Para remover os arquivos do DXVK e a configuração aplicada, clique em **Remover DXVK** e confirme.
+6. Feche o Black Desert Online antes de aplicar um perfil ou remover o DXVK. O aplicativo bloqueia essas operações enquanto o jogo está aberto.
+7. Aguarde a localização automática do jogo. Caso necessário, clique em **Alterar pasta** e escolha a pasta de instalação que contém `bin64`.
+8. Clique em **Aplicar** no cartão **Batata** ou **Normal**. O perfil identificado fica destacado como **Ativo**. Depois, abra o jogo normalmente.
+9. Para retornar ao DirectX original, feche o jogo, clique em **Remover DXVK** e confirme a remoção das DLLs e da configuração instaladas pelo gerenciador.
+
+Para fixar o aplicativo na barra de tarefas, abra-o, clique com o botão direito no ícone da janela na barra de tarefas e selecione **Fixar na barra de tarefas**. Abrir novamente o aplicativo traz a janela existente para frente, inclusive se estiver minimizada.
+
+> [!TIP]
+> **Atualizando de uma versão anterior:** desafixe o item antigo, feche o app, abra a versão atualizada pelo atalho e fixe novamente o ícone da janela. O Windows não atualiza automaticamente os itens já fixados.
+>
+> **Se mover a pasta do aplicativo:** execute **setup_shortcuts.vbs** novamente para recriar o atalho da área de trabalho e refaça a fixação na barra de tarefas.
 
 ## 🎨 Perfis disponíveis
 
