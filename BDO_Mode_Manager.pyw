@@ -3,7 +3,6 @@ import ctypes
 from ctypes import wintypes
 import json
 import shutil
-import hashlib
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import winreg
@@ -338,20 +337,32 @@ def atualizar_status():
 
 
 # ============================================================
-# HASH
+# LEITURA DAS CONFIGURAÇÕES DOS PERFIS
 # ============================================================
 
-def calcular_hash(caminho):
-    sha256 = hashlib.sha256()
+def ler_configuracao_perfil(caminho):
+    """Compara opções ativas, preservando diferenças reais de configuração."""
     try:
-        with open(caminho, "rb") as arquivo:
-            while True:
-                bloco = arquivo.read(1024 * 1024)
-                if not bloco:
-                    break
-                sha256.update(bloco)
-        return sha256.hexdigest()
-    except (OSError, IOError):
+        with open(caminho, "r", encoding="utf-8-sig") as arquivo:
+            configuracao = {}
+            for linha in arquivo:
+                linha = linha.strip()
+                if not linha or linha.startswith("#"):
+                    continue
+                chave, separador, valor = linha.partition("=")
+                chave, valor = chave.strip(), valor.strip()
+                if not separador or not chave or not valor:
+                    return None
+                # Valores de texto permanecem sensíveis a maiúsculas;
+                # somente os literais booleanos e Auto são normalizados.
+                if valor.lower() in {"true", "false", "auto"}:
+                    valor = valor.lower()
+                # Não presume qual definição prevalece em arquivos ambíguos.
+                if chave in configuracao and configuracao[chave] != valor:
+                    return None
+                configuracao[chave] = valor
+            return configuracao
+    except (OSError, UnicodeError):
         return None
 
 
@@ -379,28 +390,38 @@ def listar_modos():
 # IDENTIFICAR MODO INSTALADO
 # ============================================================
 
-def identificar_modo_instalado():
+def detectar_perfil_instalado():
+    """Retorna (nome, situação), sem escolher entre perfis equivalentes."""
     if not PASTA_BDO or not bdo_valido(PASTA_BDO):
-        return None
+        return None, "Jogo não selecionado"
 
     arquivo_bdo = os.path.join(obter_bin64_bdo(), NOME_ARQUIVO)
     if not os.path.isfile(arquivo_bdo):
-        return None
+        return None, "Sem configuração instalada"
 
-    hash_bdo = calcular_hash(arquivo_bdo)
-    if not hash_bdo:
-        return None
+    configuracao_bdo = ler_configuracao_perfil(arquivo_bdo)
+    if configuracao_bdo is None:
+        return None, "Configuração ilegível ou inválida"
 
+    correspondencias = []
     for modo in listar_modos():
         arquivo_modo = os.path.join(PASTA_MODOS, modo, NOME_ARQUIVO)
         if not os.path.isfile(arquivo_modo):
             continue
 
-        hash_modo = calcular_hash(arquivo_modo)
-        if hash_modo and hash_modo == hash_bdo:
-            return modo
+        configuracao_modo = ler_configuracao_perfil(arquivo_modo)
+        if configuracao_modo is not None and configuracao_modo == configuracao_bdo:
+            correspondencias.append(modo)
 
-    return None
+    if len(correspondencias) == 1:
+        return correspondencias[0], "Reconhecido"
+    if correspondencias:
+        return None, "Perfis equivalentes: " + ", ".join(correspondencias)
+    return None, "Configuração personalizada ou desconhecida"
+
+
+def identificar_modo_instalado():
+    return detectar_perfil_instalado()[0]
 
 
 # ============================================================
@@ -408,13 +429,13 @@ def identificar_modo_instalado():
 # ============================================================
 
 def atualizar_modo_instalado():
-    modo = identificar_modo_instalado()
+    modo, situacao = detectar_perfil_instalado()
 
     if modo:
         modo_var.set(f"Perfil identificado: {modo}")
         modo_label.config(fg=COR_SUCESSO)
     else:
-        modo_var.set("Perfil identificado: Nenhum")
+        modo_var.set(situacao)
         modo_label.config(fg=COR_TEXTO_SECUNDARIO)
     criar_botoes_modos()
 
