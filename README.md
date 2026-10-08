@@ -16,6 +16,7 @@ O programa automatiza a instalação das DLLs e a troca entre os perfis **Normal
 - Adapta a interface ao tema claro ou escuro do Windows.
 - Exibe cartões com descrições dos perfis, destaca o perfil ativo e mostra a barra de rolagem apenas quando necessária.
 - Usa um ícone próprio na barra de título e na barra de tarefas, com animações nativas ao minimizar e restaurar.
+- Mantém uma única instância: abrir novamente traz a janela existente para frente e a restaura se estiver minimizada, mesmo ao executar outra cópia do aplicativo em uma pasta diferente.
 - Explica a remoção do DXVK por um tooltip no botão **Remover DXVK**.
 
 ## 🖥️ Requisitos

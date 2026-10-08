@@ -23,6 +23,7 @@ Esta versão corrige os ícones dos atalhos na pasta e na área de trabalho. O c
 - Detecção dos perfis pelas opções ativas, sem depender das quebras de linha.
 - Bloqueio de aplicação e remoção enquanto o Black Desert estiver aberto.
 - Interface com cartões, ícone próprio e integração à barra de tarefas.
+- Instância única: abrir o aplicativo novamente traz a janela existente para frente e a restaura se estiver minimizada, inclusive ao abrir outra cópia em uma pasta diferente.
 - Remoção do DXVK com confirmação para voltar ao DirectX original.
 
 ### Avisos

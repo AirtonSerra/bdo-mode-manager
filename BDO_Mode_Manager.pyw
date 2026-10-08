@@ -6,6 +6,65 @@ import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import winreg
+import atexit
+import time
+
+
+def adquirir_instancia_unica(nome="Local\\BDOModeManager.SingleInstance"):
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR]
+    kernel32.CreateMutexW.restype = wintypes.HANDLE
+    ctypes.set_last_error(0)
+    handle = kernel32.CreateMutexW(None, False, nome)
+    if not handle:
+        raise ctypes.WinError(ctypes.get_last_error())
+    if ctypes.get_last_error() == 183:  # ERROR_ALREADY_EXISTS
+        liberar_instancia_unica(handle)
+        return None
+    return handle
+
+
+def liberar_instancia_unica(handle):
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    kernel32.CloseHandle(handle)
+
+
+def ativar_janela_existente(titulo="BDO Mode Manager"):
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
+    user32.FindWindowW.restype = wintypes.HWND
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user32.AllowSetForegroundWindow.argtypes = [wintypes.DWORD]
+    user32.AllowSetForegroundWindow.restype = wintypes.BOOL
+    user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user32.PostMessageW.restype = wintypes.BOOL
+    user32.ShowWindowAsync.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.ShowWindowAsync.restype = wintypes.BOOL
+    user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+    user32.SetForegroundWindow.restype = wintypes.BOOL
+    # Dá tempo para a primeira abertura criar a janela em cliques consecutivos.
+    for _ in range(30):
+        hwnd = user32.FindWindowW(None, titulo)
+        if hwnd:
+            pid = wintypes.DWORD()
+            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            user32.AllowSetForegroundWindow(pid.value)
+            user32.ShowWindowAsync(hwnd, 9)  # SW_RESTORE
+            user32.PostMessageW(hwnd, 0x8001, 0, 0)
+            user32.SetForegroundWindow(hwnd)
+            return True
+        time.sleep(0.1)
+    return False
+
+
+_mutex_instancia = adquirir_instancia_unica()
+if _mutex_instancia is None:
+    ativar_janela_existente()
+    raise SystemExit(0)
+atexit.register(liberar_instancia_unica, _mutex_instancia)
 
 
 # ============================================================
@@ -867,6 +926,11 @@ def configurar_moldura_nativa(user32, hwnd):
     user32.CallWindowProcW.restype = resultado_tipo
 
     def procedimento(hwnd_atual, mensagem, wparam, lparam):
+        if mensagem == 0x8001:  # Pedido de ativação de uma segunda abertura.
+            # Usa somente Win32 aqui: chamadas Tk dentro deste callback
+            # podem reentrar no interpretador Tcl durante eventos nativos.
+            trazer_janela_para_frente()
+            return 0
         if mensagem == 0x0083:  # WM_NCCALCSIZE: toda a janela é área de conteúdo.
             return 0
         return user32.CallWindowProcW(
@@ -912,6 +976,15 @@ def configurar_barra_de_tarefas():
             raise ctypes.WinError(ctypes.get_last_error())
     configurar_moldura_nativa(user32, hwnd)
     configurar_icone_nativo(user32, hwnd)
+
+
+def trazer_janela_para_frente():
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+    if _hwnd_personalizado:
+        user32.ShowWindow(_hwnd_personalizado, 9)
+        user32.SetForegroundWindow(_hwnd_personalizado)
 
 
 def mostrar_janela():
