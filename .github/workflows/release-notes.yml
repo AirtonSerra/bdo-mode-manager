@@ -1,0 +1,47 @@
+name: Atualizar notas da release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/release-notes.md
+      - .github/workflows/release-notes.yml
+  workflow_run:
+    workflows: [Publicar release]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-release-notes
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Atualizar descrição sem substituir os arquivos publicados
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version="$(tr -d '\r\n' < VERSION)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Formato de versão inválido."
+            exit 1
+          fi
+          release_version="v$version"
+          for attempt in {1..30}; do
+            if gh release view "$release_version" >/dev/null 2>&1; then
+              gh release edit "$release_version" --notes-file .github/release-notes.md
+              exit $?
+            fi
+            sleep 10
+          done
+          echo "A release $release_version ainda não está disponível."
+          exit 1
