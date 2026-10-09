@@ -11,6 +11,9 @@ import atexit
 import time
 import subprocess
 import uuid
+import threading
+import queue
+from tkinter import ttk
 
 
 def adquirir_instancia_unica(nome="Local\\BDOModeManager.SingleInstance"):
@@ -93,6 +96,7 @@ PASTA_BIN64_PROGRAMA = os.path.join(
 
 # Caminho do BDO
 PASTA_BDO = ""
+BUSCA_EM_ANDAMENTO = False
 
 # Arquivo de configuração onde o path do BDO é salvo, para não
 # precisar procurar/selecionar de novo a cada abertura.
@@ -249,6 +253,8 @@ def obter_bin64_bdo():
 # ============================================================
 
 def procurar_bdo():
+    # A busca ampla é limitada para não varrer discos indefinidamente sem o jogo.
+    limite = time.monotonic() + 10
     candidatos = []
 
     pastas_base = [
@@ -319,6 +325,8 @@ def procurar_bdo():
             candidatos_unicos.append(candidato)
 
     for candidato in candidatos_unicos:
+        if time.monotonic() >= limite:
+            return ""
         if bdo_valido(candidato):
             return candidato
 
@@ -342,6 +350,8 @@ def procurar_bdo():
                 topdown=True,
                 onerror=lambda erro: None
             ):
+                if time.monotonic() >= limite:
+                    return ""
                 diretorios[:] = [
                     d for d in diretorios
                     if d.lower() not in ignorar
@@ -409,6 +419,7 @@ def atualizar_status():
         texto_path.set("")
         status_var.set("✕  Black Desert não encontrado")
         status_label.config(fg=COR_ERRO)
+    botao_desinstalar.config(state="normal" if PASTA_BDO else "disabled")
 
 
 # ============================================================
@@ -868,6 +879,7 @@ def criar_botoes_modos():
                           justify="left", wraplength=310)
         resumo.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 12))
         acao = tk.Button(card, text="✓ Ativo" if ativo else "Aplicar",
+                         state="disabled" if BUSCA_EM_ANDAMENTO or not PASTA_BDO else "normal",
                          font=("Segoe UI", 10), bg=COR_BOTAO,
                          fg=COR_SUCESSO if ativo else COR_TEXTO,
                          activebackground=COR_BOTAO_ATIVO,
@@ -1283,7 +1295,7 @@ entrada_path = tk.Entry(frame_path, textvariable=texto_path, state="readonly",
                         font=("Segoe UI", 10), readonlybackground=COR_ENTRADA,
                         fg=COR_TEXTO, relief="flat", bd=0)
 entrada_path.pack(side="left", fill="x", expand=True, ipady=8)
-botao_selecionar = tk.Button(frame_path, text="Alterar pasta", command=selecionar_bdo,
+botao_selecionar = tk.Button(frame_path, text="Alterar pasta", command=selecionar_bdo, state="disabled",
                              font=("Segoe UI", 9), bg=COR_BOTAO, fg=COR_TEXTO,
                              activebackground=COR_BOTAO_ATIVO,
                              activeforeground=COR_TEXTO, relief="flat", bd=0,
@@ -1293,6 +1305,7 @@ status_var = tk.StringVar()
 status_label = tk.Label(instalacao, textvariable=status_var, font=("Segoe UI", 9),
                         bg=COR_FUNDO_SECUNDARIO, anchor="w")
 status_label.pack(fill="x", padx=12, pady=(8, 10))
+loader_busca = ttk.Progressbar(instalacao, mode="indeterminate")
 
 modo_var = tk.StringVar()
 modo_label = tk.Label(conteudo, textvariable=modo_var,
@@ -1305,7 +1318,7 @@ rodape.pack(side="bottom", fill="x", pady=(8, 0))
 tk.Label(rodape, text="Ambos os perfis padrão utilizam Vulkan via DXVK.",
          font=("Segoe UI", 9), bg=COR_FUNDO, fg=COR_TEXTO_SECUNDARIO,
          anchor="w").pack(fill="x", pady=(0, 10))
-botao_desinstalar = tk.Button(rodape, text="Remover DXVK", command=desinstalar,
+botao_desinstalar = tk.Button(rodape, text="Remover DXVK", command=desinstalar, state="disabled",
                               font=("Segoe UI", 10, "bold"), bg=COR_BOTAO, fg=COR_TEXTO,
                               activebackground=COR_BOTAO_ATIVO,
                               activeforeground=COR_TEXTO, relief="flat", bd=0,
@@ -1391,24 +1404,71 @@ janela.bind("<MouseWheel>", rolar_perfis)
 # INICIA PROGRAMA
 # ============================================================
 
-# 1) Tenta usar o path salvo de uma vez anterior (manual ou automático).
-PASTA_BDO = carregar_pasta_bdo_salva()
+def executar_busca_bdo(resultados):
+    """Somente I/O em segundo plano; widgets são atualizados pela thread Tk."""
+    try:
+        pasta = carregar_pasta_bdo_salva()
+        if not bdo_valido(pasta):
+            pasta = procurar_bdo()
+        resultados.put((pasta, False))
+    except Exception:
+        resultados.put(("", True))
 
-# 2) Por via das dúvidas, roda a validação de novo: o jogo pode ter
-#    sido movido, reinstalado ou desinstalado desde a última vez.
-if not bdo_valido(PASTA_BDO):
-    # 3) Só cai na busca automática pelo sistema se o path salvo
-    #    não existir mais ou não for mais válido.
-    PASTA_BDO = procurar_bdo()
 
-# 4) Sempre que houver um path válido (salvo ou recém-encontrado),
-#    garante que ele fique salvo para a próxima abertura.
-if PASTA_BDO and bdo_valido(PASTA_BDO):
-    salvar_pasta_bdo(PASTA_BDO)
+def concluir_busca_bdo(pasta, falhou=False):
+    global PASTA_BDO, BUSCA_EM_ANDAMENTO
+    BUSCA_EM_ANDAMENTO = False
+    PASTA_BDO = pasta
+    loader_busca.stop()
+    loader_busca.pack_forget()
+    botao_selecionar.config(state="normal")
+    if pasta:
+        salvar_pasta_bdo(pasta)
+    atualizar_status()
+    if not pasta:
+        status_var.set("Não foi possível concluir a busca. Selecione a pasta do jogo."
+                       if falhou else "BDO não encontrado. Clique em Alterar pasta para selecionar.")
+    criar_botoes_modos()
+    atualizar_modo_instalado()
 
-atualizar_status()
-criar_botoes_modos()
-atualizar_modo_instalado()
+
+def acompanhar_busca_bdo(resultados, limite):
+    try:
+        pasta, falhou = resultados.get_nowait()
+    except queue.Empty:
+        if time.monotonic() >= limite:
+            # Um disco indisponível pode bloquear uma chamada de I/O. Não bloqueia a UI.
+            concluir_busca_bdo("", True)
+            return
+        janela.after(100, acompanhar_busca_bdo, resultados, limite)
+        return
+    concluir_busca_bdo(pasta, falhou)
+
+
+def iniciar_busca_bdo():
+    global BUSCA_EM_ANDAMENTO
+    BUSCA_EM_ANDAMENTO = True
+    botao_selecionar.config(state="disabled")
+    botao_desinstalar.config(state="disabled")
+    status_var.set("Localizando a instalação do Black Desert…")
+    status_label.config(fg=COR_TEXTO_SECUNDARIO)
+    modo_var.set("Aguardando a localização do jogo…")
+    criar_botoes_modos()
+    loader_busca.pack(fill="x", padx=12, pady=(0, 10))
+    loader_busca.start(15)
+    resultados = queue.Queue()
+    threading.Thread(target=executar_busca_bdo, args=(resultados,), daemon=True).start()
+    acompanhar_busca_bdo(resultados, time.monotonic() + 12)
+
+
+def inicializar_bdo():
+    # Validar somente o caminho salvo não exige uma nova varredura dos discos.
+    pasta = carregar_pasta_bdo_salva()
+    if pasta and bdo_valido(pasta):
+        concluir_busca_bdo(pasta)
+    else:
+        iniciar_busca_bdo()
 
 janela.after(0, mostrar_janela)
+janela.after(20, inicializar_bdo)
 janela.mainloop()
