@@ -1,0 +1,15 @@
+O BDO Mode Manager é gratuito e de código aberto, disponibilizado sob a licença MIT. Seu código pode ser consultado e avaliado diretamente no repositório do GitHub:
+https://github.com/AirtonSerra/bdo-mode-manager
+
+Ao aplicar um perfil, o aplicativo adiciona DLLs do DXVK à pasta do Black Desert Online para permitir o uso de Vulkan e cria ou atualiza o arquivo de configuração dxvk.conf. Não edita os executáveis originais do jogo.
+
+O USO DE DLLS DE TERCEIROS PODE CONTRARIAR AS POLÍTICAS DO BLACK DESERT ONLINE E RESULTAR EM ADVERTÊNCIAS, SUSPENSÃO OU BANIMENTO DA CONTA.
+
+O aplicativo não possui vínculo com a Pearl Abyss nem autorização declarada da operadora. Cabe ao usuário consultar as regras oficiais e assumir os riscos e as consequências de sua decisão de uso.
+
+O software é fornecido "como está", sem garantias. Na máxima extensão permitida pela legislação aplicável, Airton Sena (Salazas) não se responsabiliza por punições, perdas de conta, itens ou dados, danos ou prejuízos decorrentes do uso do aplicativo.
+
+Consulte o texto completo da licença MIT no GitHub:
+https://github.com/AirtonSerra/bdo-mode-manager/blob/main/LICENSE
+
+A licença MIT também acompanha a instalação no arquivo LICENSE. Se não concordar com a licença e as condições acima, cancele a instalação.
