@@ -9,8 +9,9 @@ BDO Mode Manager 1.2.0 — instalador Windows x64 para o usuário atual.
 - Janela abre antes da busca pelo jogo, com indicador de carregamento e ações bloqueadas durante a procura em segundo plano.
 - Caminho salvo válido é reutilizado sem nova busca e sem indicador de carregamento.
 
-Baixe o arquivo **BDO-Mode-Manager-v1.2.0-Setup.exe** em Assets e execute o instalador.
-O arquivo `.exe.sha256` permite verificar sua integridade.
+**Para instalar, baixe somente BDO-Mode-Manager-v1.2.0-Setup.exe em Assets e execute-o.**
+Não é necessário baixar ou instalar Python, DLLs, ferramentas de assinatura ou qualquer outro componente separado. Tudo que o gerenciador precisa já está incluído no instalador.
+Os arquivos **Source code (zip)** e **Source code (tar.gz)** gerados pelo GitHub são destinados a desenvolvedores e não são necessários para instalar ou usar o app.
 
 O build atual não possui assinatura digital e pode receber avisos ou bloqueios do Windows.
 
