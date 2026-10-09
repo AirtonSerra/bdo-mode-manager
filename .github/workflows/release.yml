@@ -2,8 +2,11 @@ name: Publicar release
 
 on:
   push:
+    branches: [main]
     tags:
       - 'v*.*.*'
+    paths:
+      - .github/workflows/release.yml
 
 permissions:
   contents: write
@@ -20,6 +23,23 @@ jobs:
         shell: pwsh
     steps:
       - uses: actions/checkout@v6
+      - name: Preparar versão e notas da release
+        run: |
+          $version = (Get-Content VERSION -Raw).Trim()
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Versão inválida." }
+          $releaseVersion = "v$version"
+          if ($env:GITHUB_REF -like 'refs/tags/*' -and $env:GITHUB_REF_NAME -ne $releaseVersion) {
+            throw "A tag deve corresponder ao arquivo VERSION."
+          }
+          "RELEASE_VERSION=$releaseVersion" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          Copy-Item .github/release-notes.md "$env:RUNNER_TEMP/release-notes.md"
+          # A repetição pela branch usa o mesmo código da tag, sem alterar a tag publicada.
+          if ($env:GITHUB_REF -notlike 'refs/tags/*') {
+            git fetch origin "refs/tags/${releaseVersion}:refs/tags/${releaseVersion}"
+            if ($LASTEXITCODE -ne 0) { throw "Tag não encontrada." }
+            git checkout --detach "$releaseVersion"
+            if ($LASTEXITCODE -ne 0) { throw "Falha ao selecionar o código da tag." }
+          }
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -29,19 +49,22 @@ jobs:
         run: |
           python -m pip install -r requirements-build.txt
           if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar dependências de build." }
-          choco install innosetup --version=6.7.3 --yes --no-progress
-          if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar Inno Setup." }
+          $download = "$env:RUNNER_TEMP/innosetup-6.7.3.exe"
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe' -OutFile $download
+          if ((Get-AuthenticodeSignature $download).Status -ne 'Valid') {
+            throw "A assinatura do instalador oficial do Inno Setup não é válida."
+          }
+          $toolDir = "$env:RUNNER_TEMP/Inno"
+          $process = Start-Process -FilePath $download -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=`"$toolDir`"", '/NOICONS') -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Falha ao preparar Inno Setup." }
       - name: Gerar instalador Windows
-        env:
-          RELEASE_VERSION: ${{ github.ref_name }}
-        run: python scripts/build_windows.py "$env:RELEASE_VERSION"
+        run: python scripts/build_windows.py "$env:RELEASE_VERSION" --iscc "$env:RUNNER_TEMP/Inno/ISCC.exe"
       - name: Verificar executável empacotado
         run: python scripts/smoke_windows.py "dist/BDO Mode Manager/BDO Mode Manager.exe"
       - name: Publicar na aba Releases
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_VERSION: ${{ github.ref_name }}
         run: |
           $assets = Get-ChildItem dist/BDO-Mode-Manager-*-Setup.exe, dist/BDO-Mode-Manager-*-Setup.exe.sha256
           gh release view "$env:RELEASE_VERSION" *> $null
@@ -49,7 +72,7 @@ jobs:
             throw "A release já existe; ela não será substituída automaticamente."
           }
           $assetPaths = @($assets.FullName)
-          gh release create "$env:RELEASE_VERSION" @assetPaths --verify-tag --draft --title "BDO Mode Manager $env:RELEASE_VERSION" --notes-file .github/release-notes.md
+          gh release create "$env:RELEASE_VERSION" @assetPaths --verify-tag --draft --title "BDO Mode Manager $env:RELEASE_VERSION" --notes-file "$env:RUNNER_TEMP/release-notes.md"
           if ($LASTEXITCODE -ne 0) { throw "Falha ao criar release." }
           gh release edit "$env:RELEASE_VERSION" --draft=false --latest
           if ($LASTEXITCODE -ne 0) { throw "Falha ao publicar release." }
