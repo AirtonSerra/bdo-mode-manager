@@ -8,16 +8,35 @@ import sys
 import tkinter as tk
 import unittest
 import uuid
+from types import SimpleNamespace
 
 
 @unittest.skipUnless(sys.platform == 'win32', 'Propriedades da janela do Windows')
 class AtalhoJanelaTests(unittest.TestCase):
     def test_comando_icone_e_identidade_do_item_fixado(self):
+        self.verificar_em_processo(False)
+
+    def test_comando_do_executavel_empacotado(self):
+        self.verificar_em_processo(True)
+
+    def verificar_em_processo(self, frozen):
+        # Isola o ciclo de vida Tk/COM: cada variante usa uma janela e processo novos.
+        code = (
+            "import runpy,sys; "
+            "suite=runpy.run_path(sys.argv[1])['AtalhoJanelaTests']; "
+            "suite().verificar_atalho(sys.argv[2]=='True')"
+        )
+        result = subprocess.run([sys.executable, '-c', code, str(Path(__file__).resolve()),
+                                 str(frozen)], capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def verificar_atalho(self, frozen):
         pasta = Path(__file__).resolve().parents[1]
         arvore = ast.parse((pasta / 'BDO_Mode_Manager.pyw').read_text(encoding='utf-8'))
         arvore.body = [no for no in arvore.body if isinstance(no, ast.FunctionDef)
                        and no.name == 'configurar_atalho_da_janela']
-        contexto = dict(ctypes=ctypes, wintypes=wintypes, uuid=uuid,
+        runtime = SimpleNamespace(frozen=frozen, executable=str(pasta / 'BDO Mode Manager.exe'))
+        contexto = dict(ctypes=ctypes, wintypes=wintypes, uuid=uuid, sys=runtime,
                         subprocess=subprocess, os=os, PASTA_PROGRAMA=str(pasta),
                         CAMINHO_ICONE=str(pasta / 'assets/bdo-mode-manager-spirit-outline.ico'),
                         _hwnd_atalho=None)
@@ -25,7 +44,7 @@ class AtalhoJanelaTests(unittest.TestCase):
         janela = tk.Tk()
         janela.withdraw()
         try:
-            janela.update_idletasks()
+            janela.update()
             user32 = ctypes.WinDLL('user32')
             user32.GetParent.argtypes = [wintypes.HWND]
             user32.GetParent.restype = wintypes.HWND
@@ -55,6 +74,8 @@ class AtalhoJanelaTests(unittest.TestCase):
                                            str(pasta / 'launch.vbs')]),
                 3: contexto['CAMINHO_ICONE'] + ',0',
                 4: 'BDO Mode Manager', 5: 'BDOModeManager.App'}
+            if frozen:
+                esperado[2] = subprocess.list2cmdline([runtime.executable])
             try:
                 for pid, texto in esperado.items():
                     chave = Chave((ctypes.c_ubyte * 16).from_buffer_copy(uuid.UUID(

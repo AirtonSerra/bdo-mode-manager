@@ -1,4 +1,5 @@
 import os
+import sys
 import ctypes
 from ctypes import wintypes
 import json
@@ -95,9 +96,11 @@ PASTA_BDO = ""
 
 # Arquivo de configuração onde o path do BDO é salvo, para não
 # precisar procurar/selecionar de novo a cada abertura.
-# Fica na própria pasta do programa (ao lado do .pyw) —
-# não cria nada em %APPDATA% nem em outro lugar do PC do usuário.
-ARQUIVO_CONFIG = os.path.join(PASTA_PROGRAMA, "config.json")
+# Dados do usuário separados dos arquivos instalados, preservados nas atualizações.
+PASTA_DADOS = os.path.join(
+    os.environ.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), "AppData", "Local"),
+    "BDOModeManager")
+ARQUIVO_CONFIG = os.path.join(PASTA_DADOS, "config.json")
 
 
 # ============================================================
@@ -110,19 +113,30 @@ def carregar_pasta_bdo_salva():
     Retorna string vazia se não existir ou estiver corrompido.
     """
     try:
-        with open(ARQUIVO_CONFIG, "r", encoding="utf-8") as arquivo:
+        caminho = ARQUIVO_CONFIG
+        # Compatibilidade com a distribuição antiga, sem sobrescrever dados atuais.
+        if not os.path.exists(caminho):
+            pasta_antiga = (os.path.dirname(sys.executable)
+                            if getattr(sys, "frozen", False) else PASTA_PROGRAMA)
+            caminho = os.path.join(pasta_antiga, "config.json")
+        with open(caminho, "r", encoding="utf-8") as arquivo:
             dados = json.load(arquivo)
-        return dados.get("pasta_bdo", "") or ""
+        pasta = dados.get("pasta_bdo", "")
+        if not isinstance(pasta, str):
+            return ""
+        if caminho != ARQUIVO_CONFIG:
+            salvar_pasta_bdo(pasta)
+        return pasta
     except (OSError, IOError, ValueError, AttributeError):
         return ""
 
 
 def salvar_pasta_bdo(pasta):
     """
-    Salva o path do BDO no arquivo de config (na pasta do
-    programa), para ser reaproveitado na próxima abertura.
+    Salva o path do BDO nos dados do usuário para a próxima abertura.
     """
     try:
+        os.makedirs(PASTA_DADOS, exist_ok=True)
         with open(ARQUIVO_CONFIG, "w", encoding="utf-8") as arquivo:
             json.dump({"pasta_bdo": pasta}, arquivo, ensure_ascii=False, indent=2)
     except (OSError, IOError):
@@ -929,7 +943,7 @@ def configurar_atalho_da_janela(hwnd):
     definir = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p,
                                 ctypes.POINTER(PROPERTYKEY),
                                 ctypes.POINTER(PROPVARIANT))(tabela[6])
-    comando = subprocess.list2cmdline([
+    comando = subprocess.list2cmdline([sys.executable] if getattr(sys, "frozen", False) else [
         os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "wscript.exe"),
         os.path.join(PASTA_PROGRAMA, "launch.vbs")])
     # As propriedades de reabertura devem preceder o AppUserModel.ID.
