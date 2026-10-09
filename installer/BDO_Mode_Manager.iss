@@ -16,12 +16,12 @@ AppPublisher=Salazas Corp
 VersionInfoCompany=Salazas Corp
 VersionInfoVersion={#AppVersion}.0
 VersionInfoProductVersion={#AppVersion}
-DefaultDirName={userdocs}\BDO Mode Manager
+DefaultDirName={autopf}\BDO Mode Manager
 UsePreviousAppDir=no
 DisableWelcomePage=no
 DisableDirPage=no
 DisableProgramGroupPage=yes
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutputDir}
@@ -51,8 +51,8 @@ Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "AVISO-DE-USO.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{userprograms}\BDO Mode Manager"; Filename: "{app}\BDO Mode Manager.exe"; WorkingDir: "{app}"; AppUserModelID: "BDOModeManager.App"
-Name: "{userdesktop}\BDO Mode Manager"; Filename: "{app}\BDO Mode Manager.exe"; WorkingDir: "{app}"; Tasks: desktopicon; AppUserModelID: "BDOModeManager.App"
+Name: "{autoprograms}\BDO Mode Manager"; Filename: "{app}\BDO Mode Manager.exe"; WorkingDir: "{app}"; AppUserModelID: "BDOModeManager.App"
+Name: "{autodesktop}\BDO Mode Manager"; Filename: "{app}\BDO Mode Manager.exe"; WorkingDir: "{app}"; Tasks: desktopicon; AppUserModelID: "BDOModeManager.App"
 
 [Run]
 Filename: "{app}\BDO Mode Manager.exe"; Description: "Abrir BDO Mode Manager"; Flags: nowait postinstall skipifsilent
@@ -149,7 +149,7 @@ begin
   WizardForm.WelcomeLabel1.Caption := 'Bem-vindo ao BDO Mode Manager';
   WizardForm.WelcomeLabel2.Caption :=
     'Gerencie os perfis Normal e Batata do Black Desert Online com DXVK/Vulkan.' + #13#10#13#10 +
-    'Este assistente instalará o aplicativo para o usuário atual. Python e os componentes necessários já estão incluídos.' + #13#10#13#10 +
+    'Este assistente instalará o aplicativo para todos os usuários deste computador e solicitará permissão de administrador. Python e os componentes necessários já estão incluídos.' + #13#10#13#10 +
     'Na próxima tela, leia a licença de uso e o aviso de riscos antes de continuar.' + #13#10#13#10 +
     'Clique em Avançar para começar ou em Cancelar para sair.';
   PaginaAviso := CreateCustomPage(wpWelcome, 'Licença de uso e aviso de riscos',

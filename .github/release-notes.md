@@ -1,7 +1,7 @@
-BDO Mode Manager 1.2.0 — instalador Windows x64 para o usuário atual.
+BDO Mode Manager 1.2.0 — instalador Windows x64 para todos os usuários.
 
 - Python e Tkinter incluídos: não é necessário instalar Python.
-- Tela de apresentação antes do aceite e pasta padrão em `Documentos\BDO Mode Manager`, com escolha de destino.
+- Tela de apresentação antes do aceite e pasta padrão em `Arquivos de Programas\BDO Mode Manager`, com escolha de destino. Instalação e desinstalação solicitam permissão de administrador.
 - Atalho no menu Iniciar e atalho na área de trabalho marcado por padrão.
 - Configurações preservadas nas atualizações, em `%LOCALAPPDATA%\BDOModeManager`.
 - Perfis Normal/Batata, ícones e DLLs DXVK incluídos.

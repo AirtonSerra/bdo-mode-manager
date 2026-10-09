@@ -2,11 +2,8 @@ name: Publicar release
 
 on:
   push:
-    branches: [main]
     tags:
       - 'v*.*.*'
-    paths:
-      - .github/workflows/release.yml
 
 permissions:
   contents: write
@@ -69,7 +66,13 @@ jobs:
           $assets = Get-ChildItem dist/BDO-Mode-Manager-*-Setup.exe, dist/BDO-Mode-Manager-*-Setup.exe.sha256
           gh release view "$env:RELEASE_VERSION" *> $null
           if ($LASTEXITCODE -eq 0) {
-            throw "A release já existe; ela não será substituída automaticamente."
+            if ($env:RELEASE_VERSION -eq 'v1.2.0' -and '${{ github.event.forced }}' -eq 'true') {
+              # Republicação da v1.2.0 explicitamente solicitada pelo mantenedor.
+              gh release delete "$env:RELEASE_VERSION" --yes
+              if ($LASTEXITCODE -ne 0) { throw "Falha ao remover a release anterior." }
+            } else {
+              throw "A release já existe; ela não será substituída automaticamente."
+            }
           }
           $assetPaths = @($assets.FullName)
           gh release create "$env:RELEASE_VERSION" @assetPaths --verify-tag --draft --title "BDO Mode Manager $env:RELEASE_VERSION" --notes-file "$env:RUNNER_TEMP/release-notes.md"

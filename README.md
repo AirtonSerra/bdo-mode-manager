@@ -28,8 +28,9 @@ O programa automatiza a instalação das DLLs e a troca entre os perfis **Normal
 
 ## 📁 Arquivos instalados e dados
 
-O instalador instala apenas para o usuário atual, por padrão em
-`Documentos\BDO Mode Manager`, e permite escolher outra pasta.
+O instalador instala para todos os usuários, por padrão em
+`Arquivos de Programas\BDO Mode Manager`, e permite escolher outra pasta.
+A instalação e a desinstalação solicitam permissão de administrador.
 Inclui o executável, Python/Tkinter, `assets/`, `bin64/` e `game_modes/`.
 Cria um atalho no menu Iniciar e deixa a opção de atalho na área de trabalho marcada por padrão.
 O app não depende dos inicializadores `.vbs` na distribuição instalada.
@@ -63,7 +64,7 @@ da pasta do jogo. Para isso, use **Remover DXVK** antes de desinstalar.
 ## ▶️ Como usar
 
 1. Na página de [Releases](https://github.com/AirtonSerra/bdo-mode-manager/releases/latest), baixe **BDO-Mode-Manager-v<VERSÃO>-Setup.exe** em **Assets**. Os arquivos **Source code** são o código-fonte.
-2. Execute o instalador, escolha a pasta e, se desejar, marque o atalho na área de trabalho. A pasta padrão não exige administrador.
+2. Execute o instalador, autorize a solicitação de administrador e escolha a pasta. O atalho na área de trabalho vem marcado por padrão e pode ser desmarcado.
 3. Abra **BDO Mode Manager** pelo menu Iniciar ou pelo atalho. Não é necessário instalar Python, extrair ZIP ou executar scripts de configuração de atalhos.
 
 > [!IMPORTANT]
