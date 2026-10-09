@@ -14,7 +14,10 @@ concurrency:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v7
@@ -22,34 +25,31 @@ jobs:
           python-version: '3.12'
       - name: Verificar o aplicativo
         run: python -m unittest discover -s tests -v
-      - name: Montar pacote do usuário final
+      - name: Instalar ferramentas de build
+        run: |
+          python -m pip install -r requirements-build.txt
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar dependências de build." }
+          choco install innosetup --version=6.7.3 --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar Inno Setup." }
+      - name: Gerar instalador Windows
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
-        run: python scripts/package_release.py "$RELEASE_VERSION"
+        run: python scripts/build_windows.py "$env:RELEASE_VERSION"
+      - name: Verificar executável empacotado
+        run: python scripts/smoke_windows.py "dist/BDO Mode Manager/BDO Mode Manager.exe"
       - name: Publicar na aba Releases
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_VERSION: ${{ github.ref_name }}
         run: |
-          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
-            gh release delete "$RELEASE_VERSION" --yes
-          fi
-          gh release create "$RELEASE_VERSION" dist/*.zip dist/*.sha256 \
-            --verify-tag --draft \
-            --title "BDO Mode Manager $RELEASE_VERSION" \
-            --notes-file .github/release-notes.md
-          gh release edit "$RELEASE_VERSION" --draft=false --latest
-      - name: Remover releases de tentativa após publicar a versão definitiva
-        if: github.ref_name == 'v1.0.0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          # Exclusão solicitada: somente as três releases de tentativa.
-          # As tags e os commits antigos são preservados.
-          for old_version in v1.0.1 v1.0.2 v1.0.3; do
-            if gh release view "$old_version" >/dev/null 2>&1; then
-              gh release delete "$old_version" --yes
-            fi
-          done
+          $assets = Get-ChildItem dist/BDO-Mode-Manager-*-Setup.exe, dist/BDO-Mode-Manager-*-Setup.exe.sha256
+          gh release view "$env:RELEASE_VERSION" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            throw "A release já existe; ela não será substituída automaticamente."
+          }
+          $assetPaths = @($assets.FullName)
+          gh release create "$env:RELEASE_VERSION" @assetPaths --verify-tag --draft --title "BDO Mode Manager $env:RELEASE_VERSION" --notes-file .github/release-notes.md
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao criar release." }
+          gh release edit "$env:RELEASE_VERSION" --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao publicar release." }

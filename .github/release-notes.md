@@ -1,41 +1,22 @@
-### Correções da v1.0.1
+BDO Mode Manager 1.2.0 — instalador Windows x64 para o usuário atual.
 
-- Corrige o ícone e a abertura do aplicativo ao fixar a janela na barra de tarefas do Windows.
-- Define o inicializador correto para o item fixado, mantendo a instância única.
+- Python e Tkinter incluídos: não é necessário instalar Python.
+- Tela de apresentação antes do aceite e pasta padrão em `Documentos\BDO Mode Manager`, com escolha de destino.
+- Atalho no menu Iniciar e atalho na área de trabalho marcado por padrão.
+- Configurações preservadas nas atualizações, em `%LOCALAPPDATA%\BDOModeManager`.
+- Perfis Normal/Batata, ícones e DLLs DXVK incluídos.
+- Aviso obrigatório sobre riscos, com aceite explícito e espera de 15 segundos.
+- Janela abre antes da busca pelo jogo, com indicador de carregamento e ações bloqueadas durante a procura em segundo plano.
+- Caminho salvo válido é reutilizado sem nova busca e sem indicador de carregamento.
 
-> [!TIP]
-> **Atualizando de uma versão anterior:** desafixe o item antigo, feche o app, abra esta versão e fixe novamente o ícone da janela. O Windows não atualiza automaticamente os itens já fixados. Se mover a pasta, refaça a fixação.
+Baixe o arquivo **BDO-Mode-Manager-v1.2.0-Setup.exe** em Assets e execute o instalador.
+O arquivo `.exe.sha256` permite verificar sua integridade.
 
-Versão para Windows com os arquivos necessários para usar o BDO Mode Manager.
+O build atual não possui assinatura digital e pode receber avisos ou bloqueios do Windows.
+Não desative as proteções para instalar.
 
-> [!IMPORTANT]
-> **Desbloqueie o ZIP antes de extrair no Windows.** Clique com o botão direito no arquivo baixado → **Propriedades** → marque **Desbloquear**, se disponível → **Aplicar**. Só então extraia o pacote e execute o configurador.
->
-> Se aparecer o aviso **“O Controle de Aplicativo Inteligente bloqueou um arquivo”**, e você já tiver extraído o ZIP, desbloqueie o ZIP original e extraia novamente para uma nova pasta. Esse procedimento resolveu o bloqueio observado nesta versão, sem desativar a proteção do Windows. Use apenas o pacote deste repositório; se o aviso continuar, não há garantia de liberação por esse procedimento.
+Desinstalar o gerenciador não remove o DXVK do jogo. Use **Remover DXVK** no app antes,
+se desejar voltar ao DirectX original. Feche o jogo antes de aplicar ou remover perfis.
 
-### Download e uso
-
-1. Baixe o arquivo **BDO-Mode-Manager-v1.0.1-Windows.zip** em Assets.
-2. Siga o aviso acima para desbloquear o ZIP e extraia todo o conteúdo para uma pasta; não abra o aplicativo dentro do ZIP.
-3. Instale Python 3 com Tkinter e o launcher do Python.
-4. No primeiro uso, execute **setup_shortcuts.vbs** para configurar o ícone e criar o atalho na área de trabalho. Depois abra **BDO Mode Manager** na pasta extraída ou na área de trabalho. Se mover a pasta, execute o configurador novamente.
-5. Selecione a instalação do jogo e clique em **Aplicar** no perfil desejado.
-
-O pacote inclui o atalho com ícone próprio, inicializador, aplicativo Python, DLLs DXVK, perfis Normal/Batata na pasta `game_modes`, ícones, README e licença. Não inclui configuração pessoal, testes ou arquivos de desenvolvimento. Não é um executável independente: Python precisa estar instalado.
-
-Esta versão corrige os ícones dos atalhos na pasta e na área de trabalho. O configurador instala o ícone em `%LOCALAPPDATA%\BDOModeManager` e cria o atalho da área de trabalho com o caminho correto para o aplicativo. O inicializador continua localizando o Python sem depender da associação de arquivos `.pyw`.
-
-### Recursos
-
-- Perfis Normal e Batata usando DXVK/Vulkan no lugar do DirectX.
-- Detecção dos perfis pelas opções ativas, sem depender das quebras de linha.
-- Bloqueio de aplicação e remoção enquanto o Black Desert estiver aberto.
-- Interface com cartões, ícone próprio e integração à barra de tarefas.
-- Instância única: abrir o aplicativo novamente traz a janela existente para frente e a restaura se estiver minimizada, inclusive ao abrir outra cópia em uma pasta diferente.
-- Remoção do DXVK com confirmação para voltar ao DirectX original.
-
-### Avisos
-
-O programa altera arquivos da pasta `bin64` do jogo. Mantenha um backup e use por sua conta e risco. O uso de DLLs de terceiros e modificações do cliente pode infringir as regras ou os termos de uso do Black Desert Online; consulte as políticas da Pearl Abyss.
-
-O arquivo `.sha256` permite verificar a integridade do ZIP.
+O app precisa de acesso de gravação à pasta do jogo. O uso de DLLs de terceiros pode
+infringir as regras do Black Desert Online; consulte as políticas oficiais.
